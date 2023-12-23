@@ -31,40 +31,39 @@ def index():
 
 @app.route('/Submit', methods=['POST'])
 def upload_file():
-    email = request.form['email']
-    task_type = request.form['task_type']
-    train_file = request.files['train_set']
-    test_file = request.files['test_set']
-    model_file = request.files['file']
-    
-    if not model_file or not model_file.filename.endswith('.joblib'):
-        return "Please upload a joblib file"
+    try:
+        email = request.form['email']
+        task_type = request.form['task_type']
+        files = {
+            'model': request.files.get('file'),
+            'train': request.files.get('train_set'),
+            'test': request.files.get('test_set')
+        }
 
-    submission_time = datetime.now().strftime("%Y%m%d%H%M%S")
-    user_id = email.split('@')[0]  # using the part before '@' as UserID
+        user_id = email.split('@')[0]
+        submission_time = datetime.now().strftime("%Y%m%d%H%M%S")
     
-    request_obj = utils.Request(user_id, submission_time, task_type=task_type)
+        # Validate file types
+        if not files['model'] or not files['model'].filename.endswith('.joblib'):
+            return "Please upload a joblib file for the model"
+        if not all(file.filename.endswith('.csv') for file in [files['train'], files['test']]):
+            return "Please upload csv files for the training and test sets"
 
-    # Process and upload each model, train, and test file to S3 bucket
-    s3_file_paths = request_obj.get_file_names()
-    
-    for file_type, s3_file_path in s3_file_paths.items():
-        if file_type == 'model':
-            file = model_file
-        elif file_type == 'train':
-            file = train_file
-        else:
-            file = test_file
+        client = utils.S3Client(s3_client, request_bucket_name)
+        request_info = utils.Request(user_id, submission_time, task_type)
+        request_logger = utils.RequestLogger(request_info)
+
+        for file_type, file in files.items():
+            s3_file_path = f"{file_type}/{user_id}_{submission_time}"
+            client.upload_file(file, s3_file_path)
+            logging.info("Uploaded file %s to S3 bucket %s", s3_file_path, request_bucket_name)
         
-        if file:
-            s3_client.upload_fileobj(file, request_bucket_name, s3_file_path)
-            logging.info("User %s uploaded %s file at %s", user_id, file_type, submission_time)
-            
-    # Log the request
-    request_obj.log_request()
+        request_logger.log_request(request_info)
+        return "Model submitted successfully"
     
-    return "Model submitted successfully"
-
+    except Exception as e:
+        logging.error("Error in upload_file function: %s", e)
+        return "An error occurred while submitting the model"
 
 if __name__ == '__main__':
     app.run(debug=True)

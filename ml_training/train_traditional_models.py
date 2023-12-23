@@ -4,7 +4,7 @@ import json
 import joblib
 import pandas as pd
 
-from model_registry import model_registry
+from model_registry import classification_models, regression_models
 
 class ModelTrainer:
     """Handles the training and saving of traditional machine learning models.
@@ -57,15 +57,15 @@ class ModelTrainer:
 
 
 def main(args):
-    trainer = ModelTrainer(save_path=os.path.join('.', args.key, 'traditional_models'))
+    trainer = ModelTrainer(save_path=os.path.join('.', args.id, 'traditional_models'))
     os.makedirs(trainer.save_path, exist_ok=True)
 
     X_train, y_train = trainer.load_dataset(args.dataset)
 
-    # Load hyperparameters from the specified JSON file
+    # Load hyperparameters and model type from the specified JSON file
     try:
         with open(args.hyperparams, 'r') as hp_file:
-            hyperparams = json.load(hp_file)
+            model_config = json.load(hp_file)
     except FileNotFoundError:
         print(f"Hyperparameters file not found: {args.hyperparams}")
         return
@@ -73,17 +73,24 @@ def main(args):
         print(f"Error decoding JSON from file: {args.hyperparams}")
         return
 
+    model_type = model_config.get('model_type', 'classification') # Default to classification if not specified
+    hyperparams = model_config.get('hyperparameters', {})
+
     for model_name, params in hyperparams.items():
-        if model_name in model_registry:
-            model = model_registry[model_name](**params)
-            trainer.train_model(model_name, model, X_train, y_train)
+        if model_type == 'classification' and model_name in classification_models:
+            model = classification_models[model_name](**params)
+        elif model_type == 'regression' and model_name in regression_models:
+            model = regression_models[model_name](**params)
         else:
-            print(f"Model \'{model_name}\' not found in registry.")
+            print(f"Model '{model_name}' not found in {model_type} registry.")
+            continue
+
+        trainer.train_model(model_name, model, X_train, y_train)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--key', type=str, default='00000000')
+    parser.add_argument('--id', type=str, default='00000000')
     parser.add_argument('--dataset', type=str, required=True)
-    parser.add_argument('--hyperparams', type=str, required=True, help="Path to JSON file with model names and hyperparameters")
+    parser.add_argument('--hyperparams', type=str, required=True, help="Path to JSON file with model type and hyperparameters")
     args = parser.parse_args()
     main(args)

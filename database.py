@@ -21,3 +21,20 @@ class S3Client:
         except:
             logging.error("Error downloading file %s from S3 bucket %s", file_name, self.bucket_name)
             raise
+    
+    def delete_file(self, file_name):
+        try:
+            self.client.delete_object(self.bucket_name, file_name)
+            logging.info("Deleted file %s from S3 bucket %s", file_name, self.bucket_name)
+        except:
+            logging.error("Error deleting file %s from S3 bucket %s", file_name, self.bucket_name)
+            raise
+
+    def get_file(self, file_name):
+        try:
+            obj = self.client.get_object(self.bucket_name, file_name)
+            logging.info("Got file %s from S3 bucket %s", file_name, self.bucket_name)
+            return obj
+        except:
+            logging.error("Error getting file %s from S3 bucket %s", file_name, self.bucket_name)
+            raise

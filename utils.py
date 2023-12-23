@@ -38,18 +38,30 @@ class Request:
             'train': base_path + "train",
             'test': base_path + "test"
         }
+    
+    def to_json(self):
+        return json.dumps(self.to_dict())
 
 
-# Utility functions for handling requests
-def fetch_latest_request(log_file='requests.json'):
-    try:
-        requests = read_requests(log_file)
-        return next((req for req in requests if req['status'] == 'PENDING'), None)
-    except Exception as e:
-        logging.error(f"Error fetching latest request: {e}")
-        return None
-
-
-def read_requests(log_file):
-    with open(log_file, 'r') as f:
-        return [json.loads(line) for line in f]
+class RequestQueue:
+    def __init__(self, queue_file='request_queue.json'):
+        self.queue_file = queue_file
+    
+    def add_request(self, request):
+        with open(self.queue_file, 'a') as f:
+            f.write(request.to_json() + '\n')
+            logging.info("Added request for user %s to queue", request.user_id)
+    
+    def get_next_request(self):
+        with open(self.queue_file, 'r') as f:
+            requests = [json.loads(line) for line in f]
+        pending_requests = [req for req in requests if req['status'] == 'PENDING']
+        return pending_requests[0] if pending_requests else None
+    
+    def update_request_status(self, request, status):
+        with open(self.queue_file, 'r') as f:
+            requests = [json.loads(line) for line in f]
+        for req in requests:
+            if req['user_id'] == request.user_id and req['submission_time'] == request.submission_time:
+                req['status'] = status
+                break

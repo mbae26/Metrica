@@ -1,61 +1,72 @@
+from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from datetime import datetime
 import logging
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-class S3Client:
-    def __init__(self, s3_client, bucket_name):
-        self.client = s3_client 
-        self.bucket_name = bucket_name
-    
-    def upload_file(self, file, file_name):
-        try:
-            self.client.upload_fileobj(file, self.bucket_name, file_name)
-            logging.info("Uploaded file %s to S3 bucket %s", file_name, self.bucket_name)
-        except:
-            logging.error("Error uploading file %s to S3 bucket %s", file_name, self.bucket_name)
-            raise
-        
-    def download_file(self, file_name, local_path):
-        try:
-            self.client.download_file(self.bucket_name, file_name, local_path)
-            logging.info("Downloaded file %s from S3 bucket %s", file_name, self.bucket_name)
-        except:
-            logging.error("Error downloading file %s from S3 bucket %s", file_name, self.bucket_name)
-            raise
-    
-    def delete_file(self, file_name):
-        try:
-            self.client.delete_object(self.bucket_name, file_name)
-            logging.info("Deleted file %s from S3 bucket %s", file_name, self.bucket_name)
-        except:
-            logging.error("Error deleting file %s from S3 bucket %s", file_name, self.bucket_name)
-            raise
+Base = declarative_base()
 
-    def download_model(self, model_path):
-        local_path = f"downloads/model/{model_path}"
-        try:
-            self.client.download_file(self.bucket_name, model_path, local_path)
-            logging.info("Downloaded model %s from S3 bucket %s", model_path, self.bucket_name)
-            return local_path
-        except:
-            logging.error("Error downloading model %s from S3 bucket %s", model_path, self.bucket_name)
-            raise
+
+class Request(Base):
+    __tablename__ = 'requests'
     
-    def download_train_set(self, train_path):
-        local_path = f"downloads/train/{train_path}"
-        try:
-            self.client.download_file(self.bucket_name, train_path, local_path)
-            logging.info("Downloaded train set %s from S3 bucket %s", train_path, self.bucket_name)
-            return local_path
-        except:
-            logging.error("Error downloading train set %s from S3 bucket %s", train_path, self.bucket_name)
-            raise
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String, nullable=False)
+    submission_time = Column(DateTime, default=datetime.utcnow)
+    status = Column(String, default='PENDING')
+    task_type = Column(String, default='CLASSIFICATION')
     
-    def download_test_set(self, test_path):
-        local_path = f"downloads/test/{test_path}"
-        try:
-            self.client.download_file(self.bucket_name, test_path, local_path)
-            logging.info("Downloaded test set %s from S3 bucket %s", test_path, self.bucket_name)
-            return local_path
-        except:
-            logging.error("Error downloading test set %s from S3 bucket %s", test_path, self.bucket_name)
-            raise
+    def __repr__(self):
+        return f"<Request(user_id='{self.user_id}', submission_time='{self.submission_time}', status='{self.status}', task_type='{self.task_type}')>"
+
+
+# Database setup
+engine = create_engine('sqlite:///requests.db')
+Base.metadata.create_all(engine)
+Session = sessionmaker(bind=engine)
+
+# Database operations
+def add_request(user_id, task_type):
+    session = Session()
+    new_request = Request(user_id=user_id, task_type=task_type)
+    try:
+        session.add(new_request)
+        session.commit()
+        logging.info("Added request for user %s to database", user_id)
+    except Exception as e:
+        logging.error("Error adding request for user %s to database: %s", user_id, e)
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def update_request_status(request_id, new_status):
+    session = Session()
+    try:
+        request = session.query(Request).filter(Request.id == request_id).first()
+        if request:
+            request.status = new_status
+            session.commit()
+            logging.info("Updated status of request %s to %s", request_id, new_status)
+    except Exception as e:
+        logging.error("Error updating status of request %s to %s: %s", request_id, new_status, e)
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def get_next_request():
+    session = Session()
+    try:
+        request = session.query(Request).filter(Request.status == 'PENDING').first()
+        return request
+    except Exception as e:
+        logging.error("Error fetching next request: %s", e)
+        raise
+    finally:
+        session.close()

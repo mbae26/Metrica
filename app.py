@@ -7,7 +7,7 @@ import boto3
 from flask import Flask, request, render_template
 
 from utils import Request, RequestLogger
-from database import S3Client
+from s3_client import S3Client
 
 load_dotenv()
 

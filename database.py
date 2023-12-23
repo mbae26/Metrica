@@ -30,11 +30,32 @@ class S3Client:
             logging.error("Error deleting file %s from S3 bucket %s", file_name, self.bucket_name)
             raise
 
-    def get_file(self, file_name):
+    def download_model(self, model_path):
+        local_path = f"downloads/model/{model_path}"
         try:
-            obj = self.client.get_object(self.bucket_name, file_name)
-            logging.info("Got file %s from S3 bucket %s", file_name, self.bucket_name)
-            return obj
+            self.client.download_file(self.bucket_name, model_path, local_path)
+            logging.info("Downloaded model %s from S3 bucket %s", model_path, self.bucket_name)
+            return local_path
         except:
-            logging.error("Error getting file %s from S3 bucket %s", file_name, self.bucket_name)
+            logging.error("Error downloading model %s from S3 bucket %s", model_path, self.bucket_name)
+            raise
+    
+    def download_train_set(self, train_path):
+        local_path = f"downloads/train/{train_path}"
+        try:
+            self.client.download_file(self.bucket_name, train_path, local_path)
+            logging.info("Downloaded train set %s from S3 bucket %s", train_path, self.bucket_name)
+            return local_path
+        except:
+            logging.error("Error downloading train set %s from S3 bucket %s", train_path, self.bucket_name)
+            raise
+    
+    def download_test_set(self, test_path):
+        local_path = f"downloads/test/{test_path}"
+        try:
+            self.client.download_file(self.bucket_name, test_path, local_path)
+            logging.info("Downloaded test set %s from S3 bucket %s", test_path, self.bucket_name)
+            return local_path
+        except:
+            logging.error("Error downloading test set %s from S3 bucket %s", test_path, self.bucket_name)
             raise

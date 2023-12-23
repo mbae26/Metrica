@@ -30,7 +30,7 @@ def index():
     return render_template('upload_form.html')
 
 
-@app.route('/Submit', methods=['POST'])
+@app.route('/submit', methods=['POST'])
 def upload_file():
     try:
         email = request.form['email']

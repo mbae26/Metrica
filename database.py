@@ -15,7 +15,7 @@ class Request(Base):
     
     id = Column(Integer, primary_key=True)
     user_id = Column(String, nullable=False)
-    submission_time = Column(DateTime, default=datetime.utcnow)
+    submission_time = Column(String, nullable=False)
     status = Column(String, default='PENDING')
     task_type = Column(String, default='CLASSIFICATION')
     
@@ -29,9 +29,9 @@ Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 
 # Database operations
-def add_request(user_id, task_type):
+def add_request(user_id, submission_type, task_type):
     session = Session()
-    new_request = Request(user_id=user_id, task_type=task_type)
+    new_request = Request(user_id=user_id, submission_type=submission_type, task_type=task_type)
     try:
         session.add(new_request)
         session.commit()

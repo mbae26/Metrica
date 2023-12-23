@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 import boto3
 from flask import Flask, request, render_template
 
-from utils import Request, RequestLogger
 from s3_client import S3Client
+import database
 
 load_dotenv()
 
@@ -51,15 +51,15 @@ def upload_file():
             return "Please upload csv files for the training and test sets"
 
         client = S3Client(s3_client, request_bucket_name)
-        request_info = Request(user_id, submission_time, task_type)
-        request_logger = RequestLogger(request_info)
 
         for file_type, file in files.items():
             s3_file_path = f"{file_type}/{user_id}_{submission_time}"
             client.upload_file(file, s3_file_path)
             logging.info("Uploaded file %s to S3 bucket %s", s3_file_path, request_bucket_name)
         
-        request_logger.log_request(request_info)
+        database.add_request(user_id, submission_time, task_type)
+        logging.info(f"Model submitted successfully. Request ID: {user_id}")
+
         return "Model submitted successfully"
     
     except Exception as e:

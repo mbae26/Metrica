@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 
 import boto3
 from flask import Flask, request, render_template
-from werkzeug.utils import secure_filename
 
 import utils
 
@@ -14,8 +13,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # Configure logging
-logging.basicConfig(filename='submission_log.log', level=logging.INFO,
-                    format='%(asctime)s - %(message)s')
+logging.basicConfig(level=logging.INFO,format='%(asctime)s - %(message)s')
 
 # AWS S3 configuration
 s3_client = boto3.client('s3',
@@ -23,43 +21,49 @@ s3_client = boto3.client('s3',
                         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'))
 
 # AWS S3 bucket name
-bucket_name = os.getenv('REQUEST_BUCKET_NAME')
+request_bucket_name = os.getenv('REQUEST_BUCKET_NAME')
+
 
 @app.route('/')
 def index():
     return render_template('upload_form.html')
 
-@app.route('/upload', methods=['POST'])
+
+@app.route('/Submit', methods=['POST'])
 def upload_file():
-    user_id = request.form['user_id']
-    file = request.files['file']
+    email = request.form['email']
+    task_type = request.form['task_type']
+    train_file = request.files['train_set']
+    test_file = request.files['test_set']
+    model_file = request.files['file']
     
-    if not file or not file.filename.endswith('.joblib'):
-        return_msg = "Please upload a joblib file"
-        return return_msg
+    if not model_file or not model_file.filename.endswith('.joblib'):
+        return "Please upload a joblib file"
 
-    filename = secure_filename(file.filename)
     submission_time = datetime.now().strftime("%Y%m%d%H%M%S")
-    s3_file_path = f"{user_id}/{submission_time}/{filename}.joblib"     # double check "file path"
-
-    # Upload file to S3 bucket
-    s3_client.upload_fileobj(file, bucket_name, s3_file_path)
+    user_id = email.split('@')[0]  # using the part before '@' as UserID
     
-    # Log the request to 
-    logging.info(f"User {user_id} uploaded file {filename} at {submission_time}")
-    # Log the request to a JSON file
-    request_data = {
-        'user_id': user_id, 
-        'submission_time': submission_time,
-        'status': 'PENDING',    # Consider using an enum for this 
-    }
-    # utils.write_to_json(request_data)
+    request_obj = utils.Request(user_id, submission_time, task_type=task_type)
+
+    # Process and upload each model, train, and test file to S3 bucket
+    s3_file_paths = request_obj.get_file_names()
     
-    # Return success message
-    return_msg = f"File {filename} uploaded successfully"
-    return return_msg
-
-
+    for file_type, s3_file_path in s3_file_paths.items():
+        if file_type == 'model':
+            file = model_file
+        elif file_type == 'train':
+            file = train_file
+        else:
+            file = test_file
+        
+        if file:
+            s3_client.upload_fileobj(file, request_bucket_name, s3_file_path)
+            logging.info("User %s uploaded %s file at %s", user_id, file_type, submission_time)
+            
+    # Log the request
+    request_obj.log_request()
+    
+    return "Model submitted successfully"
 
 
 if __name__ == '__main__':

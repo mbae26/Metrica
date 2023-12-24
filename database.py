@@ -60,13 +60,13 @@ def update_request_status(request_id, new_status):
         session.close()
 
 
-def get_next_request():
+def get_pending_requests():
     session = Session()
     try:
-        request = session.query(Request).filter(Request.status == 'PENDING').first()
-        return request
+        pending_requests = session.query(Request).filter(Request.status == 'PENDING').all()
+        return pending_requests
     except Exception as e:
-        logging.error("Error fetching next request: %s", e)
+        logging.error("Error fetching pending requests: %s", e)
         raise
     finally:
         session.close()

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
@@ -21,6 +21,21 @@ class Request(Base):
     
     def __repr__(self):
         return f"<Request(user_id='{self.user_id}', submission_time='{self.submission_time}', status='{self.status}', task_type='{self.task_type}')>"
+
+
+class Result(Base):
+    __tablename__ = 'results'
+
+    id = Column(Integer, primary_key=True)
+    eval_summary = Column(String, nullable=False)
+    task_type = Column(String, nullable=False)
+    f1_score = Column(Float, nullable=True)
+    precision = Column(Float, nullable=True)
+    recall = Column(Float, nullable=True)
+    ece = Column(Float, nullable=True)  # Example Error Calibration Error (ECE)
+
+    def __repr__(self):
+        return f"<Result(id='{self.id}', eval_summary='{self.eval_summary}', task_type='{self.task_type}', f1_score='{self.f1_score}', precision='{self.precision}', recall='{self.recall}', ece='{self.ece}')>"
 
 
 # Database setup
@@ -67,6 +82,40 @@ def get_pending_requests():
         return pending_requests
     except Exception as e:
         logging.error("Error fetching pending requests: %s", e)
+        raise
+    finally:
+        session.close()
+
+
+def add_result(eval_summary, task_type, metrics):
+    session = Session()
+    new_result = Result(
+        eval_summary=eval_summary,
+        task_type=task_type,
+        f1_score=metrics.get('f1_score'),
+        precision=metrics.get('precision'),
+        recall=metrics.get('recall'),
+        ece=metrics.get('ece')
+    )
+    try:
+        session.add(new_result)
+        session.commit()
+        logging.info("Added result to database")
+    except Exception as e:
+        logging.error("Error adding result to database: %s", e)
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def get_result_by_id(result_id):
+    session = Session()
+    try:
+        result = session.query(Result).filter(Result.id == result_id).first()
+        return result
+    except Exception as e:
+        logging.error("Error fetching result with id %s: %s", result_id, e)
         raise
     finally:
         session.close()

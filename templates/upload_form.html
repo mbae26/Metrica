@@ -1,0 +1,42 @@
+<!-- upload_form.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Joblib File</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 50px;
+        }
+        form {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+        input[type="text"], input[type="file"], select {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h2>Upload Your Model</h2>
+    <form method="POST" action="/upload" enctype="multipart/form-data">
+        Email: <input type="text" name="email" required><br>
+        Task Type: 
+        <select name="task_type" required>
+            <option value="Regression">Regression</option>
+            <option value="Classification">Classification</option>
+        </select><br>
+        Train Set: <input type="file" name="train_set" accept=".csv" required><br>
+        Test Set:  <input type="file" name="test_set" accept=".csv" required><br>
+        Trained Model: <input type="file" name="file" accept=".joblib" required><br>
+        <input type="submit" value="Submit">
+    </form>
+</body>
+</html>

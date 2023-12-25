@@ -1,6 +1,6 @@
 import os
 import joblib
-import json
+# import json
 import pandas as pd
 
 import model_registry
@@ -17,7 +17,7 @@ class RequestProcessor:
         save_path (str): The directory path where trained models and results will be saved.
     """
 
-    def __init__(self, request, s3_client, save_path):
+    def __init__(self, request, s3_client):
         """
         Initializes the RequestProcessor with a request, S3 client, and save path.
 
@@ -28,29 +28,27 @@ class RequestProcessor:
         """
         self.request = request
         self.s3_client = s3_client
-        self.save_path = save_path
+        self.save_path = request.user_id
+    
+    def load_user_model(self):
+        model_file_name = f"{self.save_path}_model"
+        model_local_path = os.path.join('model', f"{self.save_path}.joblib")
+        
+        self.s3_client.download_file(model_file_name, model_local_path)
+        
+        model = joblib.load(model_local_path)
+        return model
 
-    def load_dataset(self, path):
+    def load_dataset(self, file_type):
         """
-        Loads the dataset from S3 and returns the training data and labels.
-
-        Returns:
-            Tuple[pd.DataFrame, pd.Series]: Training data features and labels.
+        Loads the dataset from S3.
         """
-        dataset_file_name = f"train/{self.request.user_id}_{self.request.submission_time}.csv"
-        dataset_local_path = os.path.join('datasets', dataset_file_name)
+        dataset_file_name = f"{self.save_path}_{file_type}"
+        dataset_local_path = os.path.join(file_type, f"{self.save_path}.csv")
 
-        try:
-            self.s3_client.download_file(dataset_file_name, dataset_local_path)
-        except Exception as e:
-            print(f"Error downloading dataset from S3: {e}")
-            return pd.DataFrame(), pd.Series()
+        self.s3_client.download_file(dataset_file_name, dataset_local_path)
 
-        try:
-            dataset = pd.read_csv(dataset_local_path)
-        except Exception as e:
-            print(f"Error loading dataset: {e}")
-            return pd.DataFrame(), pd.Series()
+        dataset = pd.read_csv(dataset_local_path)
 
         X_train = dataset.iloc[:, :-1]
         y_train = dataset.iloc[:, -1]
@@ -69,7 +67,7 @@ class RequestProcessor:
         print(f'Training {model_name}...')
         model.fit(X_train, y_train)
 
-    def evaluate_model(self, model, X_test, y_test, task_type):
+    def evaluate_model(self, model, X_test, y_test):
         """
         Evaluates the model using specified metrics.
 
@@ -87,10 +85,10 @@ class RequestProcessor:
             'y_test': y_test,
             'predictions': model.predict(X_test),
             'y_scores': model.predict_proba(X_test)[:, 1] if hasattr(model, 'predict_proba') else None,
-            'task_type': task_type
+            'task_type': self.request.task_type
         }
 
-        metrics_scores = evaluator.calculate_metrics(task_type, y_test, evaluation_scores['predictions'])
+        metrics_scores = evaluator.calculate_metrics(self.request.task_type, y_test, evaluation_scores['predictions'])
         evaluation_scores.update(metrics_scores)
 
         return evaluation_scores
@@ -114,39 +112,48 @@ class RequestProcessor:
         Returns:
             dict: A dictionary of model names and their evaluation scores.
         """        
-        X_train, y_train = self.load_dataset(path='TRAIN')
-        X_test, y_test = self.load_dataset(path='TEST')
+        X_train, y_train = self.load_dataset(file_type='train')
+        X_test, y_test = self.load_dataset(file_type='test')
 
-        model_type = self.request.task_type
-        # Load hyperparameters and model type from the specified JSON file
-        try:
-            with open(self.request.hyperparams_path, 'r') as hp_file:
-                model_config = json.load(hp_file)
-        except FileNotFoundError:
-            print(f"Hyperparameters file not found: {self.request.hyperparams_path}")
-            return
-        except json.JSONDecodeError:
-            print(f"Error decoding JSON from file: {self.request.hyperparams_path}")
-            return
+        task_type = self.request.task_type
+        hyperparams = {
+            'LogisticRegression': {},
+            'NaiveBayes': {},
+            'DecisionTree_Classification': {},
+            'RandomForest_Classification': {},
+            'AdaBoost': {},
+            'ShallowNN_Classification': {},
+        }
+        # # Load hyperparameters and model type from the specified JSON file
+        # try:
+        #     with open(self.request.hyperparams_path, 'r') as hp_file:
+        #         model_config = json.load(hp_file)
+        # except FileNotFoundError:
+        #     print(f"Hyperparameters file not found: {self.request.hyperparams_path}")
+        #     return
+        # except json.JSONDecodeError:
+        #     print(f"Error decoding JSON from file: {self.request.hyperparams_path}")
+        #     return
 
-        hyperparams = model_config.get('hyperparameters', {})
+        # hyperparams = model_config.get('hyperparameters', {})
 
         model_registry_dict = {}
-        if model_type == 'classification':
+        if task_type == 'classification':
             model_registry_dict = model_registry.classification_models
-        elif model_type == 'regression':
+        elif task_type == 'regression':
             model_registry_dict = model_registry.regression_models
 
         results = {}
+        results['user_model'] = self.evaluate_model(self.load_user_model(), X_test, y_test)
         for model_name, params in hyperparams.items():
             if model_name in model_registry_dict:
                 model = model_registry_dict[model_name](**params)
                 self.train_model(model_name, model, X_train, y_train)
                 self.save_model(model, model_name)
-                score = self.evaluate_model(model, X_test, y_test, self.request.task_type)
+                score = self.evaluate_model(model, X_test, y_test)
                 results[model_name] = score
             else:
-                print(f"Model '{model_name}' not found in {model_type} registry.")
+                print(f"Model '{model_name}' not found in {task_type} registry.")
                 continue
-
+        
         return results

@@ -83,9 +83,17 @@ class RequestProcessor:
             dict: A dictionary containing evaluation scores for the chosen metrics, or None if an error occurs.
         """
         evaluator = em.MetricsEvaluator()
-        predictions = model.predict(X_test)
         evaluation_scores = {}
 
+        predictions = model.predict(X_test)
+        evaluation_scores['predictions'] = predictions
+        evaluation_scores['y_test'] = y_test
+        evaluation_scores['y_scores'] = None
+        evaluation_scores['task_type'] = self.request.task_type
+        
+        if hasattr(model, 'predict_proba'):
+            evaluation_scores['y_scores'] = model.predict_proba(X_test)[:, 1]
+        
         for metric in self.request.evaluation_metrics:
             score = evaluator.calculate_metric(metric, y_test, predictions)
             if score is not None:

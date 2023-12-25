@@ -49,9 +49,9 @@ SessionResults = sessionmaker(bind=engine_results)
 
 
 # Database operations
-def add_request(user_id, email, submission_type, task_type):
+def add_request(user_id, email, submission_time, task_type):
     session = SessionRequests()
-    new_request = Request(user_id=user_id, email=email, submission_type=submission_type, task_type=task_type)
+    new_request = Request(user_id=user_id, email=email, submission_time=submission_time, task_type=task_type)
     try:
         session.add(new_request)
         session.commit()

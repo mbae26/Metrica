@@ -3,8 +3,9 @@ import joblib
 # import json
 import pandas as pd
 
-import model_registry
-import evaluation_metrics as em
+from . import model_registry
+from . import evaluation_metrics as em
+from . import util 
 
 class RequestProcessor:
     """
@@ -32,7 +33,7 @@ class RequestProcessor:
     
     def load_user_model(self):
         model_file_name = f"{self.save_path}_model"
-        model_local_path = os.path.join('model', f"{self.save_path}.joblib")
+        model_local_path = os.path.join(self.save_path, "user_model.joblib")
         
         self.s3_client.download_file(model_file_name, model_local_path)
         
@@ -44,7 +45,7 @@ class RequestProcessor:
         Loads the dataset from S3.
         """
         dataset_file_name = f"{self.save_path}_{file_type}"
-        dataset_local_path = os.path.join(file_type, f"{self.save_path}.csv")
+        dataset_local_path = os.path.join(self.save_path, f"{file_type}.csv")
 
         self.s3_client.download_file(dataset_file_name, dataset_local_path)
 
@@ -101,7 +102,9 @@ class RequestProcessor:
             model (sklearn.base.BaseEstimator): The trained machine learning model.
             model_name (str): The name of the model.
         """
-        model_save_path = os.path.join(self.save_path, f"{model_name}.joblib")
+        ml_models_path = os.path.join(self.save_path, 'ml_models')
+        util.ensure_directory_exists(ml_models_path)
+        model_save_path = os.path.join(ml_models_path, f"{model_name}.joblib")
         joblib.dump(model, model_save_path, compress=True)
         print(f"Saved {model_name} model to {model_save_path}")
 
@@ -118,11 +121,11 @@ class RequestProcessor:
         task_type = self.request.task_type
         hyperparams = {
             'LogisticRegression': {},
-            'NaiveBayes': {},
+            # 'NaiveBayes': {},
             'DecisionTree_Classification': {},
             'RandomForest_Classification': {},
             'AdaBoost': {},
-            'ShallowNN_Classification': {},
+            # 'ShallowNN_Classification': {'input_shape': (X_train.shape[1],)},
         }
         # # Load hyperparameters and model type from the specified JSON file
         # try:

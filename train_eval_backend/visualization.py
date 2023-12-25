@@ -32,21 +32,21 @@ class ModelVisualizer:
             'regression': ['residuals', 'prediction_vs_actual']
         }
     
-    def _plot_roc_curve(self, y_true, y_scores, ax):
+    def _plot_roc_curve(self, y_true, y_scores, ax, label):
         """Plots the ROC curve on the given axis."""
         fpr, tpr, _ = roc_curve(y_true, y_scores)
         roc_auc = auc(fpr, tpr)
-        ax.plot(fpr, tpr, label=f'ROC curve (area = {roc_auc:.2f})')
+        ax.plot(fpr, tpr, label=label)
         ax.plot([0, 1], [0, 1], linestyle='--')
         ax.set_xlabel('False Positive Rate')
         ax.set_ylabel('True Positive Rate')
         ax.set_title('Receiver Operating Characteristic')
         ax.legend(loc="lower right")
 
-    def _plot_precision_recall_curve(self, y_true, y_scores, ax):
+    def _plot_precision_recall_curve(self, y_true, y_scores, ax, label):
         """Plots the precision-recall curve on the given axis."""
         precision, recall, _ = precision_recall_curve(y_true, y_scores)
-        ax.step(recall, precision, where='post')
+        ax.step(recall, precision, where='post', label=label)
         ax.set_xlabel('Recall')
         ax.set_ylabel('Precision')
         ax.set_title('Precision-Recall Curve')
@@ -61,19 +61,19 @@ class ModelVisualizer:
         ax.set_ylabel('True labels')
         ax.set_title(title)
 
-    def _plot_residuals(self, y_true, y_pred, ax):
+    def _plot_residuals(self, y_true, y_pred, ax, label):
         """Plots the residuals on the given axis."""
         residuals = y_true - y_pred
-        ax.scatter(y_pred, residuals)
+        ax.scatter(y_pred, residuals, label=label)
         ax.hlines(y=0, xmin=y_pred.min(), xmax=y_pred.max(), colors='red', linestyles='--')
         ax.set_xlabel('Predicted Values')
         ax.set_ylabel('Residuals')
         ax.set_title('Residual Plot')
 
-    def _plot_prediction_vs_actual(self, y_true, y_pred, ax):
+    def _plot_prediction_vs_actual(self, y_true, y_pred, ax, label):
         """Plots the prediction vs actual values on the given axis."""
-        ax.scatter(y_true, y_pred, alpha=0.3)
-        ax.plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], '--', color='red')
+        ax.scatter(y_true, y_pred, alpha=0.3, label=label)
+        ax.plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], '--', color='red', label=label)
         ax.set_xlabel('Actual Values')
         ax.set_ylabel('Predicted Values')
         ax.set_title('Predicted vs. Actual Values')

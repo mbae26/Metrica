@@ -31,11 +31,11 @@ def index():
     return render_template('upload_form.html')
 
 
-@app.route('/submit', methods=['POST'])
+@app.route('/upload', methods=['POST'])
 def upload_file():
     try:
-        email = request.form['email']
-        task_type = request.form['task_type']
+        email = request.form['email'].lower()
+        task_type = request.form['task_type'].lower()
         submission_time = datetime.now().strftime("%Y%m%d%H%M%S")
         
         unique_id_string = f"{email}_{submission_time}"
@@ -44,7 +44,7 @@ def upload_file():
         logging.info(f"Unique ID generated for the request: {user_id}")
         
         files = {
-            'model': request.files.get('file'),
+            'model': request.files.get('model'),
             'train': request.files.get('train_set'),
             'test': request.files.get('test_set')
         }
@@ -60,7 +60,6 @@ def upload_file():
         for file_type, file in files.items():
             s3_file_path = f"{user_id}_{file_type}"
             client.upload_file(file, s3_file_path)
-            logging.info("Uploaded file %s to S3 bucket %s", s3_file_path, request_bucket_name)
         
         database.add_request(user_id, email, submission_time, task_type)
         logging.info(f"Model submitted successfully. Request ID: {user_id}")

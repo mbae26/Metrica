@@ -27,11 +27,11 @@ def main():
             processor = RequestProcessor(request, s3_client)
             results = processor.process_request()
             # Pass 'results' as an input to plot/visualization pipeline
-            visualizer = ModelVisualizer(request.user_id)
+            save_path = os.path.join('visual', request.user_id)
+            visualizer = ModelVisualizer(save_path)
             visualizer.create_visualizations(results)
             
             # Create a new Result object and add it to the database
-            
             
             # Also, process the results to send it to the user via email
             print(f"Processed Request {request.user_id}: {results}")
@@ -43,4 +43,4 @@ def main():
 
 
 if __name__ == '__main__':
-    pass
+    main()

@@ -144,14 +144,16 @@ class RequestProcessor:
             model_registry_dict = model_registry.regression_models
 
         results = {}
-        results['user_model'] = self.evaluate_model(self.load_user_model(), X_test, y_test)
+        user_model = self.load_user_model()
+        results['user_model'] = self.evaluate_model(user_model, X_test, y_test)
+        
         for model_name, params in hyperparams.items():
             if model_name in model_registry_dict:
                 model = model_registry_dict[model_name](**params)
                 self.train_model(model_name, model, X_train, y_train)
                 self.save_model(model, model_name)
-                score = self.evaluate_model(model, X_test, y_test)
-                results[model_name] = score
+                evaluation_results = self.evaluate_model(model, X_test, y_test)
+                results[model_name] = evaluation_results
             else:
                 print(f"Model '{model_name}' not found in {task_type} registry.")
                 continue

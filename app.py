@@ -1,8 +1,9 @@
 import os
 import logging
 from datetime import datetime
-from dotenv import load_dotenv
+import hashlib
 
+from dotenv import load_dotenv
 import boto3
 from flask import Flask, request, render_template
 
@@ -35,15 +36,19 @@ def upload_file():
     try:
         email = request.form['email']
         task_type = request.form['task_type']
+        submission_time = datetime.now().strftime("%Y%m%d%H%M%S")
+        
+        unique_id_string = f"{email}_{submission_time}"
+        # Create a hash of email and submission time to generate a unique ID
+        user_id = hashlib.sha256(unique_id_string.encode()).hexdigest()
+        logging.info(f"Unique ID generated for the request: {user_id}")
+        
         files = {
             'model': request.files.get('file'),
             'train': request.files.get('train_set'),
             'test': request.files.get('test_set')
         }
 
-        user_id = email.split('@')[0]
-        submission_time = datetime.now().strftime("%Y%m%d%H%M%S")
-    
         # Validate file types
         if not files['model'] or not files['model'].filename.endswith('.joblib'):
             return "Please upload a joblib file for the model"
@@ -53,11 +58,11 @@ def upload_file():
         client = S3Client(s3_client, request_bucket_name)
 
         for file_type, file in files.items():
-            s3_file_path = f"{file_type}/{user_id}_{submission_time}"
+            s3_file_path = f"{user_id}_{file_type}"
             client.upload_file(file, s3_file_path)
             logging.info("Uploaded file %s to S3 bucket %s", s3_file_path, request_bucket_name)
         
-        database.add_request(user_id, submission_time, task_type)
+        database.add_request(user_id, email, submission_time, task_type)
         logging.info(f"Model submitted successfully. Request ID: {user_id}")
 
         return "Model submitted successfully"

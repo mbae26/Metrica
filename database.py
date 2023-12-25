@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Float
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Float, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
@@ -7,46 +7,51 @@ import logging
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-Base = declarative_base()
+BaseRequests = declarative_base()
+BaseResults = declarative_base()
 
 
-class Request(Base):
+class Request(BaseRequests):
     __tablename__ = 'requests'
     
-    id = Column(Integer, primary_key=True)
-    user_id = Column(String, nullable=False)
+    user_id = Column(String, primary_key=True)
+    email = Column(String, nullable=False)
     submission_time = Column(String, nullable=False)
     status = Column(String, default='PENDING')
-    task_type = Column(String, default='CLASSIFICATION')
+    task_type = Column(String, default='classification')
     
     def __repr__(self):
         return f"<Request(user_id='{self.user_id}', submission_time='{self.submission_time}', status='{self.status}', task_type='{self.task_type}')>"
 
 
-class Result(Base):
+# Requests database setup
+engine_requests = create_engine('sqlite:///requests.db')
+BaseRequests.metadata.create_all(engine_requests)
+SessionRequests = sessionmaker(bind=engine_requests)
+
+
+class Result(BaseResults):
     __tablename__ = 'results'
 
-    id = Column(Integer, primary_key=True)
+    user_id = Column(String, primary_key=True)
     eval_summary = Column(String, nullable=False)
     task_type = Column(String, nullable=False)
-    f1_score = Column(Float, nullable=True)
-    precision = Column(Float, nullable=True)
-    recall = Column(Float, nullable=True)
-    ece = Column(Float, nullable=True)  # Example Error Calibration Error (ECE)
+    performance_metrics = Column(JSON)
 
     def __repr__(self):
-        return f"<Result(id='{self.id}', eval_summary='{self.eval_summary}', task_type='{self.task_type}', f1_score='{self.f1_score}', precision='{self.precision}', recall='{self.recall}', ece='{self.ece}')>"
+        return f"<Result(unique_id='{self.user_id}', eval_summary='{self.eval_summary}', task_type='{self.task_type}', performance_metrics='{self.performance_metrics}')>"
 
 
 # Database setup
-engine = create_engine('sqlite:///requests.db')
-Base.metadata.create_all(engine)
-Session = sessionmaker(bind=engine)
+engine_results = create_engine('sqlite:///results.db')
+BaseResults.metadata.create_all(engine_results)
+SessionResults = sessionmaker(bind=engine_results)
+
 
 # Database operations
-def add_request(user_id, submission_type, task_type):
-    session = Session()
-    new_request = Request(user_id=user_id, submission_type=submission_type, task_type=task_type)
+def add_request(user_id, email, submission_type, task_type):
+    session = SessionRequests()
+    new_request = Request(user_id=user_id, email=email, submission_type=submission_type, task_type=task_type)
     try:
         session.add(new_request)
         session.commit()
@@ -59,16 +64,16 @@ def add_request(user_id, submission_type, task_type):
         session.close()
 
 
-def update_request_status(request_id, new_status):
-    session = Session()
+def update_request_status(user_id, new_status):
+    session = SessionRequests()
     try:
-        request = session.query(Request).filter(Request.id == request_id).first()
+        request = session.query(Request).filter(Request.user_id == user_id).first()
         if request:
             request.status = new_status
             session.commit()
-            logging.info("Updated status of request %s to %s", request_id, new_status)
+            logging.info("Updated status of request %s to %s", user_id, new_status)
     except Exception as e:
-        logging.error("Error updating status of request %s to %s: %s", request_id, new_status, e)
+        logging.error("Error updating status of request %s to %s: %s", user_id, new_status, e)
         session.rollback()
         raise
     finally:
@@ -76,7 +81,7 @@ def update_request_status(request_id, new_status):
 
 
 def get_pending_requests():
-    session = Session()
+    session = SessionRequests()
     try:
         pending_requests = session.query(Request).filter(Request.status == 'PENDING').all()
         return pending_requests
@@ -87,15 +92,12 @@ def get_pending_requests():
         session.close()
 
 
-def add_result(eval_summary, task_type, metrics):
-    session = Session()
+def add_result(eval_summary, task_type, performance_metrics):
+    session = SessionResults()
     new_result = Result(
         eval_summary=eval_summary,
         task_type=task_type,
-        f1_score=metrics.get('f1_score'),
-        precision=metrics.get('precision'),
-        recall=metrics.get('recall'),
-        ece=metrics.get('ece')
+        performance_metrics=performance_metrics
     )
     try:
         session.add(new_result)
@@ -109,13 +111,13 @@ def add_result(eval_summary, task_type, metrics):
         session.close()
 
 
-def get_result_by_id(result_id):
-    session = Session()
+def get_result_by_id(user_id):
+    session = SessionResults()
     try:
-        result = session.query(Result).filter(Result.id == result_id).first()
+        result = session.query(Result).filter(Result.user_id == user_id).first()
         return result
     except Exception as e:
-        logging.error("Error fetching result with id %s: %s", result_id, e)
+        logging.error("Error fetching result with id %s: %s", user_id, e)
         raise
     finally:
         session.close()

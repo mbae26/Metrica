@@ -11,6 +11,7 @@ load_dotenv()
 
 s3_bucket_name = os.getenv('REQUEST_BUCKET_NAME')
 
+
 def main():
     # Initialize S3 client
     s3_client_boto = boto3.client('s3',

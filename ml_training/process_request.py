@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.metrics import accuracy_score, mean_squared_error
 import model_registry
 
+
 class RequestProcessor:
     def __init__(self, request, s3_client, save_path):
         """Initializes RequestProcessor with request, S3 client, and save path."""

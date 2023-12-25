@@ -66,5 +66,6 @@ def upload_file():
         logging.error("Error in upload_file function: %s", e)
         return "An error occurred while submitting the model"
 
+
 if __name__ == '__main__':
     app.run(debug=True)

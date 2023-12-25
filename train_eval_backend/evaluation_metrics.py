@@ -2,52 +2,44 @@ from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
     mean_squared_error, mean_absolute_error, r2_score
 )
-from sklearn.exceptions import UndefinedMetricWarning
-import warnings
 
 class MetricsEvaluator:
     """
-    Class to handle the calculation of various evaluation metrics.
+    Class for handling the calculation of various evaluation metrics for machine learning models.
     """
 
     def __init__(self):
         """
-        Initializes the EvaluationMetrics class.
+        Initializes the MetricsEvaluator class with predefined evaluation functions.
         """
-        # Dictionary mapping metric names to their corresponding functions
         self.evaluation_functions = {
-            # Classification
-            'accuracy': accuracy_score,
-            'precision': lambda y_true, y_pred: precision_score(y_true, y_pred, average='weighted'),
-            'recall': lambda y_true, y_pred: recall_score(y_true, y_pred, average='weighted'),
-            'f1_score': lambda y_true, y_pred: f1_score(y_true, y_pred, average='weighted'),
-            # Regression
-            'mae': mean_absolute_error,
-            'mse': mean_squared_error,
-            'r2_score': r2_score,
+            'classification': {
+                'accuracy': accuracy_score,
+                'precision': lambda y_true, y_pred: precision_score(y_true, y_pred, average='weighted'),
+                'recall': lambda y_true, y_pred: recall_score(y_true, y_pred, average='weighted'),
+                'f1_score': lambda y_true, y_pred: f1_score(y_true, y_pred, average='weighted'),
+            },
+            'regression': {
+                'mae': mean_absolute_error,
+                'mse': mean_squared_error,
+                'r2_score': r2_score,
+            }            
         }
 
-    def calculate_metric(self, metric_name, y_true, y_pred):
+    def calculate_metrics(self, task_type, y_true, y_pred):
         """
-        Calculate the specified metric.
+        Calculates a set of metrics based on the task type.
 
         Args:
-            metric_name (str): Name of the metric to calculate.
-            y_true (array): True labels or values.
-            y_pred (array): Predicted labels or values.
+            task_type (str): The type of the task ('classification' or 'regression').
+            y_true (array-like): True labels or values.
+            y_pred (array-like): Predicted labels or values.
 
         Returns:
-            float: The calculated metric, or None if an error occurs or the metric is undefined.
+            dict: A dictionary of calculated metrics.
         """
-        try:
-            if metric_name in self.evaluation_functions:
-                return self.evaluation_functions[metric_name](y_true, y_pred)
-            else:
-                print(f"Metric '{metric_name}' not recognized.")
-                return None
-        except UndefinedMetricWarning as e:
-            print(f"Warning for metric '{metric_name}': {e}")
-            return None
-        except Exception as e:
-            print(f"Error calculating metric '{metric_name}': {e}")
-            return None
+        scores = {}
+        for metric_name, func in self.evaluation_functions[task_type].items():
+            scores[metric_name] = func(y_true, y_pred)
+
+        return scores

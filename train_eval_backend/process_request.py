@@ -70,7 +70,7 @@ class RequestProcessor:
         print(f'Training {model_name}...')
         model.fit(X_train, y_train)
 
-    def evaluate_model(self, model, X_test, y_test):
+    def evaluate_model(self, model, X_test, y_test, task_type):
         """
         Evaluates the model using specified metrics.
 
@@ -78,28 +78,21 @@ class RequestProcessor:
             model (sklearn.base.BaseEstimator): The trained machine learning model.
             X_test (pd.DataFrame): Test data features.
             y_test (pd.Series): Test data labels.
+            task_type (str): The type of task ('classification' or 'regression').
 
         Returns:
-            dict: A dictionary containing evaluation scores for the chosen metrics, or None if an error occurs.
+            dict: A dictionary containing evaluation scores and additional model outputs.
         """
         evaluator = em.MetricsEvaluator()
-        evaluation_scores = {}
+        evaluation_scores = {
+            'y_test': y_test,
+            'predictions': model.predict(X_test),
+            'y_scores': model.predict_proba(X_test)[:, 1] if hasattr(model, 'predict_proba') else None,
+            'task_type': task_type
+        }
 
-        predictions = model.predict(X_test)
-        evaluation_scores['predictions'] = predictions
-        evaluation_scores['y_test'] = y_test
-        evaluation_scores['y_scores'] = None
-        evaluation_scores['task_type'] = self.request.task_type
-        
-        if hasattr(model, 'predict_proba'):
-            evaluation_scores['y_scores'] = model.predict_proba(X_test)[:, 1]
-        
-        for metric in self.request.evaluation_metrics:
-            score = evaluator.calculate_metric(metric, y_test, predictions)
-            if score is not None:
-                evaluation_scores[metric] = score
-            else:
-                print(f"Unable to calculate metric '{metric}'.")
+        metrics_scores = evaluator.calculate_metrics(task_type, y_test, evaluation_scores['predictions'])
+        evaluation_scores.update(metrics_scores)
 
         return evaluation_scores
 

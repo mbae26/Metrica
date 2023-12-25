@@ -2,7 +2,6 @@ import os
 import joblib
 import json
 import pandas as pd
-from sklearn.metrics import accuracy_score, mean_squared_error
 
 import model_registry
 import evaluation_metrics as em
@@ -144,7 +143,7 @@ class RequestProcessor:
                 model = model_registry_dict[model_name](**params)
                 self.train_model(model_name, model, X_train, y_train)
                 self.save_model(model, model_name)
-                score = self.evaluate_model(model, X_test, y_test)
+                score = self.evaluate_model(model, X_test, y_test, self.request.task_type)
                 results[model_name] = score
             else:
                 print(f"Model '{model_name}' not found in {model_type} registry.")

@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
 import seaborn as sns
 
 from sklearn.metrics import roc_curve, auc, precision_recall_curve, confusion_matrix
@@ -33,7 +32,7 @@ class ModelVisualizer:
             'regression': ['residuals', 'prediction_vs_actual']
         }
     
-    def _plot_roc_curve(y_true, y_scores, ax):
+    def _plot_roc_curve(self, y_true, y_scores, ax):
         """Plots the ROC curve on the given axis."""
         fpr, tpr, _ = roc_curve(y_true, y_scores)
         roc_auc = auc(fpr, tpr)
@@ -44,7 +43,7 @@ class ModelVisualizer:
         ax.set_title('Receiver Operating Characteristic')
         ax.legend(loc="lower right")
 
-    def _plot_precision_recall_curve(y_true, y_scores, ax):
+    def _plot_precision_recall_curve(self, y_true, y_scores, ax):
         """Plots the precision-recall curve on the given axis."""
         precision, recall, _ = precision_recall_curve(y_true, y_scores)
         ax.step(recall, precision, where='post')
@@ -54,15 +53,15 @@ class ModelVisualizer:
         ax.set_ylim([0.0, 1.05])
         ax.set_xlim([0.0, 1.0])
 
-    def _plot_confusion_matrix(y_true, y_pred, ax, class_names):
+    def _plot_confusion_matrix(self, y_true, y_pred, ax, class_names, title):
         """Plots the confusion matrix on the given axis."""
         cm = confusion_matrix(y_true, y_pred)
         sns.heatmap(cm, annot=True, fmt="d", cmap='Blues', xticklabels=class_names, yticklabels=class_names, ax=ax)
         ax.set_xlabel('Predicted labels')
         ax.set_ylabel('True labels')
-        ax.set_title('Confusion Matrix')
+        ax.set_title(title)
 
-    def _plot_residuals(y_true, y_pred, ax):
+    def _plot_residuals(self, y_true, y_pred, ax):
         """Plots the residuals on the given axis."""
         residuals = y_true - y_pred
         ax.scatter(y_pred, residuals)
@@ -71,7 +70,7 @@ class ModelVisualizer:
         ax.set_ylabel('Residuals')
         ax.set_title('Residual Plot')
 
-    def _plot_prediction_vs_actual(y_true, y_pred, ax):
+    def _plot_prediction_vs_actual(self, y_true, y_pred, ax):
         """Plots the prediction vs actual values on the given axis."""
         ax.scatter(y_true, y_pred, alpha=0.3)
         ax.plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], '--', color='red')
@@ -111,7 +110,7 @@ class ModelVisualizer:
         plt.close()
 
         return results_df
-    
+   
     def _create_confusion_matrices(self, results, class_names=None):
         """
         Creates and saves confusion matrix visualizations for each model in the results.
@@ -124,7 +123,7 @@ class ModelVisualizer:
             y_test = model_results['y_test']
             predictions = model_results['predictions']
             fig, ax = plt.subplots(figsize=(8, 6))
-            self.plot_confusion_matrix(y_test, predictions, ax, class_names=class_names, title=f'Confusion Matrix for {model_name}')
+            self._plot_confusion_matrix(y_test, predictions, ax, class_names=class_names, title=f'Confusion Matrix for {model_name}')
             plt.tight_layout()
             plt.savefig(os.path.join(self.save_path, f"{model_name}_confusion_matrix.png"))
             plt.close()

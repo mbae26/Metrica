@@ -1,6 +1,5 @@
 .env
 __pycache__/
 .DS_Store
-requests.db
-results.db
-requests.db-journal
+instance
+data

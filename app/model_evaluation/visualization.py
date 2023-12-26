@@ -110,7 +110,7 @@ class ModelVisualizer:
         plt.close()
 
         return results_df
-   
+
     def _create_confusion_matrices(self, results, class_names=None):
         """
         Creates and saves confusion matrix visualizations for each model in the results.

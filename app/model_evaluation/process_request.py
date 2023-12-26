@@ -1,11 +1,11 @@
 import os
 import joblib
-# import json
 import pandas as pd
 
+import app.utils as utils
 from . import model_registry
 from . import evaluation_metrics as em
-from . import util 
+
 
 class RequestProcessor:
     """
@@ -18,7 +18,7 @@ class RequestProcessor:
         save_path (str): The directory path where trained models and results will be saved.
     """
 
-    def __init__(self, request, s3_client):
+    def __init__(self, request, s3_client, save_path):
         """
         Initializes the RequestProcessor with a request, S3 client, and save path.
 
@@ -29,12 +29,13 @@ class RequestProcessor:
         """
         self.request = request
         self.s3_client = s3_client
-        self.save_path = request.user_id
-    
+        self.save_path = save_path
+        self.user_id = request.user_id
+
     def load_user_model(self):
-        model_file_name = f"{self.save_path}_model"
+        model_file_name = f"{self.user_id}_model"
         model_local_path = os.path.join(self.save_path, "user_model.joblib")
-        
+
         self.s3_client.download_file(model_file_name, model_local_path)
         
         model = joblib.load(model_local_path)
@@ -44,7 +45,7 @@ class RequestProcessor:
         """
         Loads the dataset from S3.
         """
-        dataset_file_name = f"{self.save_path}_{file_type}"
+        dataset_file_name = f"{self.user_id}_{file_type}"
         dataset_local_path = os.path.join(self.save_path, f"{file_type}.csv")
 
         self.s3_client.download_file(dataset_file_name, dataset_local_path)
@@ -89,7 +90,8 @@ class RequestProcessor:
             'task_type': self.request.task_type
         }
 
-        metrics_scores = evaluator.calculate_metrics(self.request.task_type, y_test, evaluation_scores['predictions'])
+        metrics_scores = evaluator.calculate_metrics(self.request.task_type,
+                                                    y_test, evaluation_scores['predictions'])
         evaluation_scores.update(metrics_scores)
 
         return evaluation_scores
@@ -103,7 +105,7 @@ class RequestProcessor:
             model_name (str): The name of the model.
         """
         ml_models_path = os.path.join(self.save_path, 'ml_models')
-        util.ensure_directory_exists(ml_models_path)
+        utils.ensure_directory_exists(ml_models_path)
         model_save_path = os.path.join(ml_models_path, f"{model_name}.joblib")
         joblib.dump(model, model_save_path, compress=True)
         print(f"Saved {model_name} model to {model_save_path}")
@@ -114,7 +116,7 @@ class RequestProcessor:
 
         Returns:
             dict: A dictionary of model names and their evaluation scores.
-        """        
+        """
         X_train, y_train = self.load_dataset(file_type='train')
         X_test, y_test = self.load_dataset(file_type='test')
 
@@ -142,14 +144,14 @@ class RequestProcessor:
 
         model_registry_dict = {}
         if task_type == 'classification':
-            model_registry_dict = model_registry.classification_models
+            model_registry_dict = model_registry.CLASSIFICATION_MODELS
         elif task_type == 'regression':
-            model_registry_dict = model_registry.regression_models
+            model_registry_dict = model_registry.REGRESSION_MODELS
 
         results = {}
         user_model = self.load_user_model()
         results['user_model'] = self.evaluate_model(user_model, X_test, y_test)
-        
+
         for model_name, params in hyperparams.items():
             if model_name in model_registry_dict:
                 model = model_registry_dict[model_name](**params)
@@ -160,5 +162,5 @@ class RequestProcessor:
             else:
                 print(f"Model '{model_name}' not found in {task_type} registry.")
                 continue
-        
+
         return results

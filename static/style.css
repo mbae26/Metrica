@@ -1,38 +1,32 @@
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    text-align: center;
-    padding: 50px;
+.welcome-section {
+    background-color: #003366;
+    color: #ffffff;
 }
 
-form {
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    display: inline-block;
+.evaluate-model h2 {
+    color: #00ccff;
+    margin-bottom: 1rem;
 }
 
-input[type="text"], input[type="file"], select {
-    margin: 10px 0;
-    padding: 8px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
+.process-diagram .node {
+    background-color: #00ccff;
+    border-radius: 50%;
+    width: 150px;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
+    position: relative;
 }
 
-input[type="submit"] {
-    background-color: #4CAF50;
-    color: white;
-    padding: 10px 15px;
-    margin: 10px 0;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+.process-diagram .connector {
+    background-color: #00ccff;
+    width: 10px;
+    height: 100px;
 }
 
-input[type="submit"]:hover {
-    background-color: #45a049;
-}
+/* Additional styling for the connector lines and nodes to match the design */
+/* You may also want to add :before or :after pseudo-elements for the connectors to create lines */
 
-#message {
-    margin-top: 20px;
-}
+/* Make sure to include responsive design adjustments for different screen sizes */

@@ -28,7 +28,12 @@ request_bucket_name = os.getenv('REQUEST_BUCKET_NAME')
 
 @app.route('/')
 def index():
-    return render_template('upload_form.html')
+    return render_template('index.html')
+
+
+@app.route('/submit', methods=['GET'])
+def submit():
+    return render_template('submission.html')
 
 
 @app.route('/upload', methods=['POST'])

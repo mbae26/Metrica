@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neurafy</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Neurafy</a>
+        <!-- other navigation items if needed -->
+    </nav>
+    
+    <header class="welcome-section text-center py-5">
+        <h1>Welcome</h1>
+    </header>
+    
+    <main class="container">
+        <section class="evaluate-model text-center py-5">
+            <h2>Evaluate Your ML Model</h2>
+            <a href="/submit" class="btn btn-primary my-4">Submit My Model</a>
+            <div class="process-diagram d-flex flex-column align-items-center pt-5">
+                <div class="node">Upload Your Model</div>
+                <div class="connector"></div>
+                <div class="node">Choose or Upload Dataset</div>
+                <div class="connector"></div>
+                <div class="node">Get Eval Stats</div>
+                <div class="connector"></div>
+                <div class="node">Visualize Performance</div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-dark text-white text-center py-3">
+        <!-- Footer content -->
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.7.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

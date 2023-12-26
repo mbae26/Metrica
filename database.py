@@ -92,9 +92,10 @@ def get_pending_requests():
         session.close()
 
 
-def add_result(eval_summary, task_type, performance_metrics):
+def add_result(user_id, eval_summary, task_type, performance_metrics):
     session = SessionResults()
     new_result = Result(
+        user_id=user_id,
         eval_summary=eval_summary,
         task_type=task_type,
         performance_metrics=performance_metrics

@@ -23,7 +23,6 @@ def main():
 
     # Process each pending request
     pending_requests = database.get_pending_requests()
-    print("HERE")
     for request in pending_requests:
         try:
             ensure_directory_exists(request.user_id)
@@ -38,7 +37,6 @@ def main():
             # Create a new Result object and add it to the database
             
             # Also, process the results to send it to the user via email
-            # print(f"Processed Request {request.user_id}: {results}")
             # Update the request status as COMPLETED in the database
             # database.update_request_status(request.user_id, 'COMPLETED')
         except Exception as e:

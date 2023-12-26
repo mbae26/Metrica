@@ -7,7 +7,7 @@ import database
 from s3_client import S3Client
 from train_eval_backend.process_request import RequestProcessor
 from train_eval_backend.visualization import ModelVisualizer
-from utils import ensure_directory_exists
+import utils
 
 load_dotenv()
 
@@ -25,19 +25,19 @@ def main():
     pending_requests = database.get_pending_requests()
     for request in pending_requests:
         try:
-            ensure_directory_exists(request.user_id)
+            utils.ensure_directory_exists(request.user_id)
             processor = RequestProcessor(request, s3_client)
             results = processor.process_request()
             # Pass 'results' as an input to plot/visualization pipeline
             save_path = os.path.join(request.user_id, 'visual')
-            ensure_directory_exists(save_path)
+            utils.ensure_directory_exists(save_path)
             visualizer = ModelVisualizer(save_path)
             visualizer.create_visualizations(results)
             
-            # Create a new Result object and add it to the database
+            # database.add_result(request.user_id, eval_summary, request.task_type, results)
             
             # Also, process the results to send it to the user via email
-            # Update the request status as COMPLETED in the database
+            utils.send_email(request.email, results, request.task_type)
             # database.update_request_status(request.user_id, 'COMPLETED')
         except Exception as e:
             print(f"Failed to process Request {request.user_id}: {e}")

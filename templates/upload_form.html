@@ -1,28 +1,10 @@
-<!-- upload_form.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Joblib File</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            text-align: center;
-            padding: 50px;
-        }
-        form {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            display: inline-block;
-        }
-        input[type="text"], input[type="file"], select {
-            margin: 10px 0;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <h2>Upload Your Model</h2>
@@ -38,5 +20,7 @@
         Trained Model: <input type="file" name="model" accept=".joblib" required><br>
         <input type="submit" value="Submit">
     </form>
+    <div id="message"></div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

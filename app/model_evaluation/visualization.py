@@ -174,6 +174,46 @@ class ModelVisualizer:
         plt.subplots_adjust(top=0.9)  # Adjust the top padding
         plt.savefig(os.path.join(self.save_path, "all_confusion_matrices.png"))
         plt.close()
+    
+    def _create_standard_plots(self, plot_name, results):
+        fig, ax = plt.subplots(figsize=(8, 6))
+        plot_function = self.plot_functions[plot_name]
+
+        for model_name, model_results in results.items():
+            model_name = self.model_names_dict[model_name]
+            y_test = model_results['y_test']
+            y_scores = model_results.get('y_scores', None)
+
+            if y_scores is not None:
+                plot_function(y_test, y_scores, ax, label=model_name)
+
+        ax.legend()
+        plt.tight_layout()
+        plt.savefig(os.path.join(self.save_path, f"{plot_name}.png"))
+        plt.close()
+
+    def _create_individual_plots(self, plot_name, results):
+        num_models = len(results)
+        grid_size = int(np.ceil(np.sqrt(num_models)))
+        fig, axes = plt.subplots(grid_size, grid_size, figsize=(grid_size * 6, grid_size * 6))
+        fig.suptitle(f'{plot_name.replace("_", " ").title()} for All Models', fontsize=16)
+        axes = axes.flatten()
+
+        for idx, (model_name, model_results) in enumerate(results.items()):
+            model_name = self.model_names_dict[model_name]
+            ax = axes[idx]
+            y_test = model_results['y_test']
+            predictions = model_results['predictions']
+            self.plot_functions[plot_name](y_test, predictions, ax)
+            ax.set_title(f'{model_name}')
+
+        for idx in range(num_models, len(axes)):
+            fig.delaxes(axes[idx])
+
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.9)
+        plt.savefig(os.path.join(self.save_path, f"{plot_name}_all_models.png"))
+        plt.close()
 
     def create_visualizations(self, results):
         """
@@ -184,27 +224,13 @@ class ModelVisualizer:
         """
         try:
             task_type = next(iter(results.values()))['task_type']  
-            
+
             for plot_name in self.plot_types[task_type]:
-                fig, ax = plt.subplots(figsize=(8, 6))
-                plot_function = self.plot_functions[plot_name]
+                if plot_name in ['roc_curve', 'precision_recall_curve']:
+                    self._create_standard_plots(plot_name, results)
+                elif plot_name in ['residuals', 'prediction_vs_actual']:
+                    self._create_individual_plots(plot_name, results)
 
-                for model_name, model_results in results.items():
-                    model_name = self.model_names_dict[model_name]
-                    y_test = model_results['y_test']
-                    predictions = model_results['predictions']
-                    y_scores = model_results.get('y_scores', None)
-
-                    if plot_name in ['roc_curve', 'precision_recall_curve'] and y_scores is not None:
-                        plot_function(y_test, y_scores, ax, label=model_name)
-                    elif plot_name in ['residuals', 'prediction_vs_actual']:
-                        plot_function(y_test, predictions, ax, label=model_name)
-
-                ax.legend()
-                plt.tight_layout()
-                plt.savefig(os.path.join(self.save_path, f"{plot_name}.png"))
-                plt.close()
-            
             self._generate_results_table(results)
             if task_type == 'classification':
                 self._create_confusion_matrices(results)

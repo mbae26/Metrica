@@ -126,13 +126,23 @@ class RequestProcessor:
         X_test, y_test = self.load_dataset(file_type='test')
 
         task_type = self.request.task_type
-        hyperparams = {
-            'LogisticRegression': {},
-            'DecisionTree_Classification': {},
-            'RandomForest_Classification': {},
-            'AdaBoost': {},
-            'ShallowNN_Classification': {'input_shape': (X_train.shape[1],)},
-        }
+        if task_type == 'classification':
+            hyperparams = {
+                'LogisticRegression': {},
+                'DecisionTree_Classification': {},
+                'RandomForest_Classification': {},
+                'AdaBoost': {},
+                # 'ShallowNN_Classification': {'input_shape': (X_train.shape[1],)},
+            }
+        elif task_type == 'regression':
+            hyperparams = {
+                'LinearRegression': {},
+                'LassoRegression': {},
+                'DecisionTree_Regression': {},
+                'RandomForest_Regression': {},
+                'GradientBoosting_Regression': {},
+                # 'ShallowNN_Regression': {'input_shape': (X_train.shape[1],)},
+            }
         # # Load hyperparameters and model type from the specified JSON file
         # try:
         #     with open(self.request.hyperparams_path, 'r') as hp_file:

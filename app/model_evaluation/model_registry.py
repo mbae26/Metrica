@@ -23,6 +23,7 @@ class ShallowNeuralNetwork:
         try:
             model = Sequential()
             model.add(Dense(10, activation='relu', input_shape=input_shape))
+            model.add(Dense(10, activation='relu'))
             model.add(Dense(1, activation='sigmoid'))
             model.compile(optimizer=kwargs.get('optimizer', 'adam'),
                         loss=kwargs.get('loss', 'binary_crossentropy'),
@@ -46,6 +47,7 @@ class ShallowNeuralNetwork:
         try:
             model = Sequential()
             model.add(Dense(10, activation='relu', input_shape=input_shape))
+            model.add(Dense(10, activation='relu'))
             model.add(Dense(1, activation='linear'))  # Output layer for regression
             model.compile(optimizer=kwargs.get('optimizer', 'adam'),
                         loss=kwargs.get('loss', 'mean_squared_error'),

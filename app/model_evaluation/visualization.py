@@ -1,8 +1,8 @@
 import os
-import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
-
 from sklearn.metrics import roc_curve, auc, precision_recall_curve, confusion_matrix
 
 class ModelVisualizer:
@@ -21,6 +21,20 @@ class ModelVisualizer:
             save_path (str): The directory path where visualizations and results will be saved.
         """
         self.save_path = save_path
+        self.model_names_dict = {
+            'user_model': 'User Model', # Maybe change to given name for plots?
+            'LogisticRegression': 'Logistic Regression',
+            'DecisionTree_Classification': 'Decision Tree',
+            'RandomForest_Classification': 'Random Forest',
+            'AdaBoost': 'AdaBoost',
+            'ShallowNN_Classification': 'Shallow Neural Network',
+            'LinearRegression': 'Linear Regression',
+            'LassoRegression': 'Lasso Regression',
+            'DecisionTree_Regression': 'Decision Tree',
+            'RandomForest_Regression': 'Random Forest',
+            'GradientBoosting_Regression': 'Gradient Boosting',
+            'ShallowNN_Regression': 'Shallow Neural Network',
+        }
         self.plot_functions = {
             'roc_curve': self._plot_roc_curve,
             'precision_recall_curve': self._plot_precision_recall_curve,
@@ -58,6 +72,12 @@ class ModelVisualizer:
     def _plot_confusion_matrix(self, y_true, y_pred, ax, class_names, title):
         """Plots the confusion matrix on the given axis."""
         cm = confusion_matrix(y_true, y_pred)
+
+        # Handle case where class_names is None
+        if class_names is None:
+            unique_labels = np.unique(np.concatenate((y_true, y_pred)))
+            class_names = [str(label) for label in unique_labels]
+
         sns.heatmap(cm, annot=True, fmt="d", cmap='Blues', 
                     xticklabels=class_names, yticklabels=class_names, ax=ax)
         ax.set_xlabel('Predicted labels')
@@ -127,15 +147,33 @@ class ModelVisualizer:
             results (dict): Dictionary containing evaluation results for each model.
             class_names (list of str, optional): Class names for classification labels.
         """
-        for model_name, model_results in results.items():
+        num_models = len(results)
+        # Calculate grid size for subplots
+        grid_size = int(np.ceil(np.sqrt(num_models)))
+        fig, axes = plt.subplots(grid_size, grid_size, figsize=(grid_size * 6, grid_size * 6))
+        fig.suptitle('Confusion Matrices for All Models', fontsize=16)
+
+        # Flatten axes array for easy indexing
+        axes = axes.flatten()
+
+        for idx, (model_name, model_results) in enumerate(results.items()):
+            model_name = self.model_names_dict[model_name]
             y_test = model_results['y_test']
             predictions = model_results['predictions']
-            fig, ax = plt.subplots(figsize=(8, 6))
-            self._plot_confusion_matrix(y_test, predictions, ax, class_names=class_names, 
+            ax = axes[idx]
+
+            # Call the plotting function for each model
+            self._plot_confusion_matrix(y_test, predictions, ax, class_names, 
                                         title=f'Confusion Matrix for {model_name}')
-            plt.tight_layout()
-            plt.savefig(os.path.join(self.save_path, f"{model_name}_confusion_matrix.png"))
-            plt.close()
+
+        # Hide unused subplots
+        for idx in range(num_models, len(axes)):
+            fig.delaxes(axes[idx])
+
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.9)  # Adjust the top padding
+        plt.savefig(os.path.join(self.save_path, "all_confusion_matrices.png"))
+        plt.close()
 
     def create_visualizations(self, results):
         """
@@ -152,6 +190,7 @@ class ModelVisualizer:
                 plot_function = self.plot_functions[plot_name]
 
                 for model_name, model_results in results.items():
+                    model_name = self.model_names_dict[model_name]
                     y_test = model_results['y_test']
                     predictions = model_results['predictions']
                     y_scores = model_results.get('y_scores', None)

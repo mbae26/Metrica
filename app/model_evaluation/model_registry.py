@@ -1,7 +1,6 @@
 import logging
 
 from sklearn.linear_model import LogisticRegression, LinearRegression, Lasso
-from sklearn.naive_bayes import MultinomialNB
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, RandomForestRegressor, GradientBoostingRegressor
 from keras.models import Sequential
@@ -59,7 +58,6 @@ class ShallowNeuralNetwork:
 
 CLASSIFICATION_MODELS = {
     'LogisticRegression': LogisticRegression,
-    'NaiveBayes': MultinomialNB,
     'DecisionTree_Classification': DecisionTreeClassifier,
     'RandomForest_Classification': RandomForestClassifier,
     'AdaBoost': AdaBoostClassifier,

@@ -1,6 +1,7 @@
 import os
 import joblib
 import pandas as pd
+import keras
 
 import app.utils as utils
 from . import model_registry
@@ -77,12 +78,12 @@ class RequestProcessor:
             model (sklearn.base.BaseEstimator): The trained machine learning model.
             X_test (pd.DataFrame): Test data features.
             y_test (pd.Series): Test data labels.
-            task_type (str): The type of task ('classification' or 'regression').
 
         Returns:
             dict: A dictionary containing evaluation scores and additional model outputs.
         """
         evaluator = em.MetricsEvaluator()
+        
         evaluation_scores = {
             'y_test': y_test,
             'predictions': model.predict(X_test),
@@ -90,8 +91,12 @@ class RequestProcessor:
             'task_type': self.request.task_type
         }
 
+        if evaluation_scores['task_type'] == 'classification' and isinstance(model, keras.models.Sequential):
+            evaluation_scores['y_scores'] = evaluation_scores['predictions'].flatten()
+            evaluation_scores['predictions'] = (evaluation_scores['y_scores'] > 0.5).astype(int)
+
         metrics_scores = evaluator.calculate_metrics(self.request.task_type,
-                                                    y_test, evaluation_scores['predictions'])
+                                                     y_test, evaluation_scores['predictions'])
         evaluation_scores.update(metrics_scores)
 
         return evaluation_scores
@@ -123,11 +128,10 @@ class RequestProcessor:
         task_type = self.request.task_type
         hyperparams = {
             'LogisticRegression': {},
-            # 'NaiveBayes': {},
             'DecisionTree_Classification': {},
             'RandomForest_Classification': {},
             'AdaBoost': {},
-            # 'ShallowNN_Classification': {'input_shape': (X_train.shape[1],)},
+            'ShallowNN_Classification': {'input_shape': (X_train.shape[1],)},
         }
         # # Load hyperparameters and model type from the specified JSON file
         # try:
@@ -154,11 +158,15 @@ class RequestProcessor:
 
         for model_name, params in hyperparams.items():
             if model_name in model_registry_dict:
-                model = model_registry_dict[model_name](**params)
-                self.train_model(model_name, model, X_train, y_train)
-                self.save_model(model, model_name)
-                evaluation_results = self.evaluate_model(model, X_test, y_test)
-                results[model_name] = evaluation_results
+                try:
+                    model = model_registry_dict[model_name](**params)
+                    self.train_model(model_name, model, X_train, y_train)
+                    self.save_model(model, model_name)
+                    evaluation_results = self.evaluate_model(model, X_test, y_test)
+                    results[model_name] = evaluation_results
+                except Exception as e:
+                    print(f"Error training or evaluating model '{model_name}': {e}")
+                    continue
             else:
                 print(f"Model '{model_name}' not found in {task_type} registry.")
                 continue

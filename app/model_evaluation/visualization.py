@@ -45,23 +45,28 @@ class ModelVisualizer:
             'classification': ['roc_curve', 'precision_recall_curve'],
             'regression': ['residuals', 'prediction_vs_actual']
         }
+
+    def _assign_colors_to_models(self, results):
+        """Assigns a unique color to each model for consistent plotting."""
+        colors = sns.color_palette("hsv", len(results))
+        return {model_name: color for model_name, color in zip(results.keys(), colors)}
     
-    def _plot_roc_curve(self, y_true, y_scores, ax, label=None):
+    def _plot_roc_curve(self, y_true, y_scores, ax, label=None, color='blue'):
         """Plots the ROC curve on the given axis."""
         fpr, tpr, _ = roc_curve(y_true, y_scores)
         roc_auc = auc(fpr, tpr)
-        ax.plot(fpr, tpr, label=f'{label} (AUC = {roc_auc:.2f})' 
-                if label else 'ROC Curve (AUC = {roc_auc:.2f})')
-        ax.plot([0, 1], [0, 1], linestyle='--')
+        ax.plot(fpr, tpr, label=f'{label} (AUC = {roc_auc:.2f})' if label else f'ROC Curve (AUC = {roc_auc:.2f})', color=color)
+        ax.plot([0, 1], [0, 1], linestyle='--', color='grey')
         ax.set_xlabel('False Positive Rate')
         ax.set_ylabel('True Positive Rate')
         ax.set_title('Receiver Operating Characteristic')
         ax.legend(loc="lower right")
 
-    def _plot_precision_recall_curve(self, y_true, y_scores, ax, label=None):
+
+    def _plot_precision_recall_curve(self, y_true, y_scores, ax, label=None, color='blue'):
         """Plots the precision-recall curve on the given axis."""
         precision, recall, _ = precision_recall_curve(y_true, y_scores)
-        ax.step(recall, precision, where='post', label=label if label else 'Precision-Recall Curve')
+        ax.step(recall, precision, where='post', label=label if label else 'Precision-Recall Curve', color=color)
         ax.set_xlabel('Recall')
         ax.set_ylabel('Precision')
         ax.set_title('Precision-Recall Curve')
@@ -175,17 +180,18 @@ class ModelVisualizer:
         plt.savefig(os.path.join(self.save_path, "all_confusion_matrices.png"))
         plt.close()
     
-    def _create_standard_plots(self, plot_name, results):
+    def _create_standard_plots(self, plot_name, results, model_colors):
         fig, ax = plt.subplots(figsize=(8, 6))
         plot_function = self.plot_functions[plot_name]
 
         for model_name, model_results in results.items():
+            color = model_colors[model_name]
             model_name = self.model_names_dict[model_name]
             y_test = model_results['y_test']
             y_scores = model_results.get('y_scores', None)
 
             if y_scores is not None:
-                plot_function(y_test, y_scores, ax, label=model_name)
+                plot_function(y_test, y_scores, ax, label=model_name, color=color)
 
         ax.legend()
         plt.tight_layout()
@@ -223,11 +229,12 @@ class ModelVisualizer:
             results (dict): Dictionary containing evaluation results for each model.
         """
         try:
-            task_type = next(iter(results.values()))['task_type']  
+            task_type = next(iter(results.values()))['task_type']
+            model_colors = self._assign_colors_to_models(results)
 
             for plot_name in self.plot_types[task_type]:
                 if plot_name in ['roc_curve', 'precision_recall_curve']:
-                    self._create_standard_plots(plot_name, results)
+                    self._create_standard_plots(plot_name, results, model_colors)
                 elif plot_name in ['residuals', 'prediction_vs_actual']:
                     self._create_individual_plots(plot_name, results)
 

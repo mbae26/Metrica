@@ -120,26 +120,33 @@ class ModelVisualizer:
         Returns:
             pd.DataFrame: A DataFrame representing the results in tabular format.
         """
-        # Create DataFrame from results
-        results_df = pd.DataFrame.from_dict(results, orient='index')
+        # Filter out unwanted keys and rename model names
+        filtered_results = {}
+        for model_name, model_data in results.items():
+            readable_name = self.model_names_dict.get(model_name, model_name)
+            filtered_results[readable_name] = {k: v for k, v in model_data.items() if k not in ['y_test', 'predictions', 'y_scores', 'task_type']}
+
+        # Create DataFrame from filtered results
+        results_df = pd.DataFrame.from_dict(filtered_results, orient='index')
         results_df.reset_index(inplace=True)
         results_df.rename(columns={'index': 'Model Name'}, inplace=True)
 
-        # Plotting
-        fig, ax = plt.subplots(figsize=(12, len(results_df) * 0.4))  # Adjust size as needed
+        # Format numbers for better display
+        results_df = results_df.map(lambda x: f'{x:.4f}' if isinstance(x, (float, int)) else x)
+
+        # Plotting and styling
+        fig, ax = plt.subplots(figsize=(12, len(results_df) * 0.4))
         ax.axis('tight')
         ax.axis('off')
-        table = ax.table(cellText=results_df.values, colLabels=results_df.columns, cellLoc='center', loc='center')
+        table = ax.table(cellText=results_df.values, colLabels=results_df.columns, loc='center', cellLoc='center')
         table.auto_set_font_size(False)
-        table.set_fontsize(10)  # Adjust font size as needed
-        table.scale(1.2, 1.2)  # Adjust scale as needed
+        table.set_fontsize(8)
+        table.scale(1.2, 1.5)
 
-        # Apply seaborn style
         sns.set_style("whitegrid")
-        plt.title('Model Evaluation Results')
+        plt.title('Model Evaluation Results', pad=20)
 
-        plt.savefig(os.path.join(self.save_path, "results_table.png"), 
-                    bbox_inches='tight', pad_inches=0.05)
+        plt.savefig(os.path.join(self.save_path, "results_table.png"), bbox_inches='tight', pad_inches=0.05)
         plt.close()
 
         return results_df

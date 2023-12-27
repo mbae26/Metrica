@@ -53,9 +53,9 @@ class RequestProcessor:
 
         dataset = pd.read_csv(dataset_local_path)
 
-        X_train = dataset.iloc[:, :-1]
-        y_train = dataset.iloc[:, -1]
-        return X_train, y_train
+        X = dataset.iloc[:, :-1]
+        y = dataset.iloc[:, -1]
+        return X, y
 
     def train_model(self, model_name, model, X_train, y_train):
         """

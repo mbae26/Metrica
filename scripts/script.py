@@ -36,11 +36,12 @@ def main():
                 processor = RequestProcessor(request, s3_client, user_directory)
                 results = processor.process_request()
 
-                save_path = os.path.join(user_directory, 'visual')
+                save_path = os.path.join(user_directory, 'visuals')
                 utils.ensure_directory_exists(save_path)
 
                 visualizer = ModelVisualizer(save_path)
                 visualizer.create_visualizations(results)
+                visualizer.create_pdf_report(results)
 
                 # Uncomment when database operations are ready
                 # database.add_result(request.user_id, eval_summary, request.task_type, results)

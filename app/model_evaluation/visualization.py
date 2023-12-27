@@ -3,7 +3,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+from fpdf import FPDF
 from sklearn.metrics import roc_curve, auc, precision_recall_curve, confusion_matrix
+
+class PDFReport(FPDF):
+    def header(self):
+        self.set_font('Arial', 'B', 12)
+        self.cell(0, 10, 'Model Evaluation Report', 0, 1, 'C')
+
+    def chapter_title(self, title):
+        self.set_font('Arial', 'B', 12)
+        self.cell(0, 10, title, 0, 1, 'L')
+        self.ln(5)
+
+    def chapter_image(self, image_path, scale=1.0):
+        self.image(image_path, x = 10, w = 180 * scale)
+        self.ln(10)
 
 class ModelVisualizer:
     """
@@ -251,3 +266,30 @@ class ModelVisualizer:
         
         except Exception as e:
             print(f"Error in creating visualizations: {e}")
+    
+    def create_pdf_report(self, results):
+        pdf = PDFReport()
+        pdf.add_page()
+
+        # Add the results table
+        pdf.chapter_title('Evaluation Results')
+        results_table_path = os.path.join(self.save_path, "results_table.png")
+        if os.path.exists(results_table_path):
+            pdf.chapter_image(results_table_path)
+
+        # Add each plot
+        for plot_name in self.plot_types[next(iter(results.values()))['task_type']]:
+            plot_path = os.path.join(self.save_path, f"{plot_name}.png")
+            if os.path.exists(plot_path):
+                pdf.chapter_title(plot_name.replace('_', ' ').title())
+                pdf.chapter_image(plot_path, scale=0.6)
+
+            # For individual plots (e.g., residuals, prediction_vs_actual)
+            individual_plot_path = os.path.join(self.save_path, f"{plot_name}_all_models.png")
+            if os.path.exists(individual_plot_path):
+                pdf.chapter_title(plot_name.replace('_', ' ').title())
+                pdf.chapter_image(individual_plot_path)
+
+        # Save the PDF
+        pdf_output_path = os.path.join(self.save_path, "model_evaluation_report.pdf")
+        pdf.output(pdf_output_path)

@@ -3,21 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neurafy</title>
+    <title>Metrica</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="style.css">
-    <style>
-        body {
-            background-image: url('../static/img/background.jpg');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500&family=Cormorant+Garamond:wght@500&display=swap" rel="stylesheet">
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="#">Neurafy</a>
+        <a class="navbar-brand" href="#"> <i class="fas fa-brain"></i> Metrica</a>
         <!-- other navigation items if needed -->
     </nav>
     
@@ -28,14 +24,14 @@
     <main class="container">
         <section class="evaluate-model text-center py-5">
             <h2>Evaluate Your ML Model</h2>
-            <a href="/submit" class="btn btn-primary my-4">Submit My Model</a>
-            <div class="process-diagram d-flex flex-column align-items-center pt-5">
-                <div class="node">Upload Your Model</div>
-                <div class="connector"></div>
-                <div class="node">Choose or Upload Dataset</div>
-                <div class="connector"></div>
-                <div class="node">Get Eval Stats</div>
-                <div class="connector"></div>
+            <a href="/submit" class="btn btn-primary btn-lg my-4">Submit My Model</a>
+            <div class="process-diagram d-flex flex-row align-items-center pt-5">
+                <div class="node">Upload Model</div>
+                <div class="connector"><i class="fas fa-arrow-right"></i></div>
+                <div class="node">Upload Dataset</div>
+                <div class="connector"><i class="fas fa-arrow-right"></i></div>
+                <div class="node">Get Results</div>
+                <div class="connector"><i class="fas fa-arrow-right"></i></div>
                 <div class="node">Visualize Performance</div>
             </div>
         </section>
@@ -44,10 +40,11 @@
     <footer class="bg-dark text-white text-center py-3">
         <div class="container">
             <h3>Contact Us</h3>
-            <p>Email: contact@neurafy.com</p>
-            <p>Phone: +123 456 7890</p>
-            <p>Address: 123, Neurafy Street, Data City, ML Country</p>
+            <p><i class='fas fa-envelope'></i>: minseok@stanford.edu | jpark26@stanford.edu</p>
             <!-- Add any social media links or additional contact details here -->
+            <a href="https://www.facebook.com"><i class="fab fa-facebook"></i></a>
+            <a href="https://www.twitter.com"><i class="fab fa-twitter"></i></a>
+            <a href="https://www.linkedin.com"><i class="fab fa-linkedin"></i></a>
         </div>
     </footer>
 

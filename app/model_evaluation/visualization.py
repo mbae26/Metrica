@@ -32,51 +32,58 @@ class ModelVisualizer:
             'regression': ['residuals', 'prediction_vs_actual']
         }
     
-    def _plot_roc_curve(self, y_true, y_scores, ax, label):
+    def _plot_roc_curve(self, y_true, y_scores, ax, label=None):
         """Plots the ROC curve on the given axis."""
         fpr, tpr, _ = roc_curve(y_true, y_scores)
         roc_auc = auc(fpr, tpr)
-        ax.plot(fpr, tpr, label=label)
+        ax.plot(fpr, tpr, label=f'{label} (AUC = {roc_auc:.2f})' 
+                if label else 'ROC Curve (AUC = {roc_auc:.2f})')
         ax.plot([0, 1], [0, 1], linestyle='--')
         ax.set_xlabel('False Positive Rate')
         ax.set_ylabel('True Positive Rate')
         ax.set_title('Receiver Operating Characteristic')
         ax.legend(loc="lower right")
 
-    def _plot_precision_recall_curve(self, y_true, y_scores, ax, label):
+    def _plot_precision_recall_curve(self, y_true, y_scores, ax, label=None):
         """Plots the precision-recall curve on the given axis."""
         precision, recall, _ = precision_recall_curve(y_true, y_scores)
-        ax.step(recall, precision, where='post', label=label)
+        ax.step(recall, precision, where='post', label=label if label else 'Precision-Recall Curve')
         ax.set_xlabel('Recall')
         ax.set_ylabel('Precision')
         ax.set_title('Precision-Recall Curve')
         ax.set_ylim([0.0, 1.05])
         ax.set_xlim([0.0, 1.0])
+        ax.legend()
 
     def _plot_confusion_matrix(self, y_true, y_pred, ax, class_names, title):
         """Plots the confusion matrix on the given axis."""
         cm = confusion_matrix(y_true, y_pred)
-        sns.heatmap(cm, annot=True, fmt="d", cmap='Blues', xticklabels=class_names, yticklabels=class_names, ax=ax)
+        sns.heatmap(cm, annot=True, fmt="d", cmap='Blues', 
+                    xticklabels=class_names, yticklabels=class_names, ax=ax)
         ax.set_xlabel('Predicted labels')
         ax.set_ylabel('True labels')
         ax.set_title(title)
 
-    def _plot_residuals(self, y_true, y_pred, ax, label):
+    def _plot_residuals(self, y_true, y_pred, ax, label=None):
         """Plots the residuals on the given axis."""
         residuals = y_true - y_pred
-        ax.scatter(y_pred, residuals, label=label)
+        ax.scatter(y_pred, residuals, label=label if label else 'Residuals')
         ax.hlines(y=0, xmin=y_pred.min(), xmax=y_pred.max(), colors='red', linestyles='--')
         ax.set_xlabel('Predicted Values')
         ax.set_ylabel('Residuals')
         ax.set_title('Residual Plot')
+        if label:
+            ax.legend()
 
-    def _plot_prediction_vs_actual(self, y_true, y_pred, ax, label):
+    def _plot_prediction_vs_actual(self, y_true, y_pred, ax, label=None):
         """Plots the prediction vs actual values on the given axis."""
-        ax.scatter(y_true, y_pred, alpha=0.3, label=label)
-        ax.plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], '--', color='red', label=label)
+        ax.scatter(y_true, y_pred, alpha=0.3, label=label if label else 'Predicted vs Actual')
+        ax.plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], '--', color='red')
         ax.set_xlabel('Actual Values')
         ax.set_ylabel('Predicted Values')
         ax.set_title('Predicted vs. Actual Values')
+        if label:
+            ax.legend()
 
     def _generate_results_table(self, results):
         """
@@ -106,7 +113,8 @@ class ModelVisualizer:
         sns.set_style("whitegrid")
         plt.title('Model Evaluation Results')
 
-        plt.savefig(os.path.join(self.save_path, "results_table.png"), bbox_inches='tight', pad_inches=0.05)
+        plt.savefig(os.path.join(self.save_path, "results_table.png"), 
+                    bbox_inches='tight', pad_inches=0.05)
         plt.close()
 
         return results_df
@@ -123,7 +131,8 @@ class ModelVisualizer:
             y_test = model_results['y_test']
             predictions = model_results['predictions']
             fig, ax = plt.subplots(figsize=(8, 6))
-            self._plot_confusion_matrix(y_test, predictions, ax, class_names=class_names, title=f'Confusion Matrix for {model_name}')
+            self._plot_confusion_matrix(y_test, predictions, ax, class_names=class_names, 
+                                        title=f'Confusion Matrix for {model_name}')
             plt.tight_layout()
             plt.savefig(os.path.join(self.save_path, f"{model_name}_confusion_matrix.png"))
             plt.close()

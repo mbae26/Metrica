@@ -9,3 +9,4 @@ python-dotenv==1.0.0
 scikit_learn==1.3.2
 seaborn==0.13.0
 SQLAlchemy==2.0.23
+fpdf==1.7.2

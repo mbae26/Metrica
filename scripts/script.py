@@ -43,9 +43,8 @@ def main():
                 visualizer.create_visualizations(results)
                 visualizer.create_pdf_report(results)
 
-                # Uncomment when database operations are ready
-                # database.add_result(request.user_id, eval_summary, request.task_type, results)
-                # utils.send_email(request.email, results, request.task_type)
+                # database.add_result(request.user_id, request.task_type, results)
+                # utils.send_email(request.user_id, request.email)
                 # database.update_request_status(request.user_id, 'COMPLETED')
 
             except Exception as e:

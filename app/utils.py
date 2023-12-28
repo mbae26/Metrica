@@ -5,6 +5,8 @@ import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 from flask import current_app as app
 from config import S3_CLIENT, REQUEST_BUCKET_NAME, S3Client
 from app.data_management import database
@@ -24,9 +26,10 @@ def ensure_directory_exists(path):
         raise
 
 
-def send_email(receiver_email, results, task_type, attachments=None):
+def send_email(user_id, receiver_email):
     """
-    Sends an email with the results and optional attachments.
+    Sends an email with the results and attachments.
+    If any of the files do not exist, the function raises an exception.
     """
     try:
         sender_email = app.config['SENDER_EMAIL']
@@ -41,14 +44,35 @@ def send_email(receiver_email, results, task_type, attachments=None):
         message['Subject'] = subject
         message.attach(MIMEText(email_body, 'plain'))
 
-        if attachments:
-            for attachment in attachments:
-                with open(attachment, 'rb') as file:
-                    part = MIMEText(file.read(), 'base64')
-                    part.add_header('Content-Disposition', 
-                                    'attachment; filename="{}"'.format(os.path.basename(attachment)))
-                    message.attach(part)
+        # List of files to be attached
+        file_names = [
+            "confusion_matrix.png",
+            "precision_recall_curve.png",
+            "results_table.png",
+            "roc_curve.png",
+            "model_evaluation_report.pdf"
+        ]
+        attachments = [
+            os.path.join("data", user_id, "visuals", "all_confusion_matrix.png"),
+            os.path.join("data", user_id, "visuals", "precision_recall_curve.png"),
+            os.path.join("data", user_id, "visuals", "results_table.png"),
+            os.path.join("data", user_id, "visuals", "roc_curve.png"),
+            os.path.join("data", user_id, "visuals", "model_evaluation_report.pdf")
+        ]
 
+        # Attach each file
+        for file_path, file_name in zip(attachments, file_names):
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"Attachment {file_path} not found. Email sending aborted.")
+
+            part = MIMEBase('application', "octet-stream")
+            with open(file_path, 'rb') as file:
+                part.set_payload(file.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', f'attachment; filename="{file_name}"')
+            message.attach(part)
+
+        # Send email
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(sender_email, password)
@@ -57,6 +81,7 @@ def send_email(receiver_email, results, task_type, attachments=None):
         logging.info("Email sent successfully")
     except Exception as e:
         logging.error("Error in sending email: %s", e)
+        raise
 
 
 def upload_file_logic(request):

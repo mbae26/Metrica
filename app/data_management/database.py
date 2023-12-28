@@ -38,13 +38,11 @@ class Result(BaseResults):
     __tablename__ = 'results'
 
     user_id = Column(String, primary_key=True)
-    eval_summary = Column(String, nullable=False)
     task_type = Column(String, nullable=False)
     performance_metrics = Column(JSON)
 
     def __repr__(self):
-        return f"<Result(user_id='{self.user_id}', eval_summary='{self.eval_summary}', \
-            task_type='{self.task_type}', performance_metrics='{self.performance_metrics}')>"
+        return f"<Result(user_id='{self.user_id}', task_type='{self.task_type}', performance_metrics='{self.performance_metrics}')>"
 
 
 engine_results = create_engine(f"sqlite:///{instance_dir}/results.db")
@@ -97,9 +95,9 @@ def get_pending_requests():
         session.close()
 
 
-def add_result(user_id, eval_summary, task_type, performance_metrics):
+def add_result(user_id, task_type, performance_metrics):
     session = SessionResults()
-    new_result = Result(user_id=user_id, eval_summary=eval_summary, task_type=task_type,
+    new_result = Result(user_id=user_id, task_type=task_type,
                         performance_metrics=performance_metrics)
     try:
         session.add(new_result)

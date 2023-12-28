@@ -5,7 +5,9 @@ from sklearn.metrics import (
 )
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 class MetricsEvaluator:
     """
@@ -19,12 +21,12 @@ class MetricsEvaluator:
         self.evaluation_functions = {
             'classification': {
                 'accuracy': accuracy_score,
-                'precision': lambda y_true, y_pred: precision_score(y_true, 
+                'precision': lambda y_true, y_pred: precision_score(y_true,
                                                                     y_pred, average='weighted',
                                                                     zero_division=0),
-                'recall': lambda y_true, y_pred: recall_score(y_true, y_pred, 
-                                                            average='weighted', zero_division=0),
-                'f1_score': lambda y_true, y_pred: f1_score(y_true, y_pred, 
+                'recall': lambda y_true, y_pred: recall_score(y_true, y_pred,
+                                                              average='weighted', zero_division=0),
+                'f1_score': lambda y_true, y_pred: f1_score(y_true, y_pred,
                                                             average='weighted', zero_division=0),
             },
             'regression': {

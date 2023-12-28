@@ -1,9 +1,24 @@
 import os
-import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
-
+from fpdf import FPDF
 from sklearn.metrics import roc_curve, auc, precision_recall_curve, confusion_matrix
+
+class PDFReport(FPDF):
+    def header(self):
+        self.set_font('Arial', 'B', 12)
+        self.cell(0, 10, 'Model Evaluation Report', 0, 1, 'C')
+
+    def chapter_title(self, title):
+        self.set_font('Arial', 'B', 12)
+        self.cell(0, 10, title, 0, 1, 'L')
+        self.ln(5)
+
+    def chapter_image(self, image_path, scale=1.0):
+        self.image(image_path, x = 10, w = 180 * scale)
+        self.ln(10)
 
 class ModelVisualizer:
     """
@@ -21,6 +36,20 @@ class ModelVisualizer:
             save_path (str): The directory path where visualizations and results will be saved.
         """
         self.save_path = save_path
+        self.model_names_dict = {
+            'user_model': 'User Model', # Maybe change to given name for plots?
+            'LogisticRegression': 'Logistic Regression',
+            'DecisionTree_Classification': 'Decision Tree',
+            'RandomForest_Classification': 'Random Forest',
+            'AdaBoost': 'AdaBoost',
+            'ShallowNN_Classification': 'Shallow Neural Network',
+            'LinearRegression': 'Linear Regression',
+            'LassoRegression': 'Lasso Regression',
+            'DecisionTree_Regression': 'Decision Tree',
+            'RandomForest_Regression': 'Random Forest',
+            'GradientBoosting_Regression': 'Gradient Boosting',
+            'ShallowNN_Regression': 'Shallow Neural Network',
+        }
         self.plot_functions = {
             'roc_curve': self._plot_roc_curve,
             'precision_recall_curve': self._plot_precision_recall_curve,
@@ -31,52 +60,70 @@ class ModelVisualizer:
             'classification': ['roc_curve', 'precision_recall_curve'],
             'regression': ['residuals', 'prediction_vs_actual']
         }
+
+    def _assign_colors_to_models(self, results):
+        """Assigns a unique color to each model for consistent plotting."""
+        colors = sns.color_palette("hsv", len(results))
+        return {model_name: color for model_name, color in zip(results.keys(), colors)}
     
-    def _plot_roc_curve(self, y_true, y_scores, ax, label):
+    def _plot_roc_curve(self, y_true, y_scores, ax, label=None, color='blue'):
         """Plots the ROC curve on the given axis."""
         fpr, tpr, _ = roc_curve(y_true, y_scores)
         roc_auc = auc(fpr, tpr)
-        ax.plot(fpr, tpr, label=label)
-        ax.plot([0, 1], [0, 1], linestyle='--')
+        ax.plot(fpr, tpr, label=f'{label} (AUC = {roc_auc:.2f})' if label else f'ROC Curve (AUC = {roc_auc:.2f})', color=color)
+        ax.plot([0, 1], [0, 1], linestyle='--', color='grey')
         ax.set_xlabel('False Positive Rate')
         ax.set_ylabel('True Positive Rate')
         ax.set_title('Receiver Operating Characteristic')
         ax.legend(loc="lower right")
 
-    def _plot_precision_recall_curve(self, y_true, y_scores, ax, label):
+
+    def _plot_precision_recall_curve(self, y_true, y_scores, ax, label=None, color='blue'):
         """Plots the precision-recall curve on the given axis."""
         precision, recall, _ = precision_recall_curve(y_true, y_scores)
-        ax.step(recall, precision, where='post', label=label)
+        ax.step(recall, precision, where='post', label=label if label else 'Precision-Recall Curve', color=color)
         ax.set_xlabel('Recall')
         ax.set_ylabel('Precision')
         ax.set_title('Precision-Recall Curve')
         ax.set_ylim([0.0, 1.05])
         ax.set_xlim([0.0, 1.0])
+        ax.legend()
 
     def _plot_confusion_matrix(self, y_true, y_pred, ax, class_names, title):
         """Plots the confusion matrix on the given axis."""
         cm = confusion_matrix(y_true, y_pred)
-        sns.heatmap(cm, annot=True, fmt="d", cmap='Blues', xticklabels=class_names, yticklabels=class_names, ax=ax)
+
+        # Handle case where class_names is None
+        if class_names is None:
+            unique_labels = np.unique(np.concatenate((y_true, y_pred)))
+            class_names = [str(label) for label in unique_labels]
+
+        sns.heatmap(cm, annot=True, fmt="d", cmap='Blues', 
+                    xticklabels=class_names, yticklabels=class_names, ax=ax)
         ax.set_xlabel('Predicted labels')
         ax.set_ylabel('True labels')
         ax.set_title(title)
 
-    def _plot_residuals(self, y_true, y_pred, ax, label):
+    def _plot_residuals(self, y_true, y_pred, ax, label=None):
         """Plots the residuals on the given axis."""
         residuals = y_true - y_pred
-        ax.scatter(y_pred, residuals, label=label)
+        ax.scatter(y_pred, residuals, label=label if label else 'Residuals')
         ax.hlines(y=0, xmin=y_pred.min(), xmax=y_pred.max(), colors='red', linestyles='--')
         ax.set_xlabel('Predicted Values')
         ax.set_ylabel('Residuals')
         ax.set_title('Residual Plot')
+        if label:
+            ax.legend()
 
-    def _plot_prediction_vs_actual(self, y_true, y_pred, ax, label):
+    def _plot_prediction_vs_actual(self, y_true, y_pred, ax, label=None):
         """Plots the prediction vs actual values on the given axis."""
-        ax.scatter(y_true, y_pred, alpha=0.3, label=label)
-        ax.plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], '--', color='red', label=label)
+        ax.scatter(y_true, y_pred, alpha=0.3, label=label if label else 'Predicted vs Actual')
+        ax.plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], '--', color='red')
         ax.set_xlabel('Actual Values')
         ax.set_ylabel('Predicted Values')
         ax.set_title('Predicted vs. Actual Values')
+        if label:
+            ax.legend()
 
     def _generate_results_table(self, results):
         """
@@ -88,23 +135,31 @@ class ModelVisualizer:
         Returns:
             pd.DataFrame: A DataFrame representing the results in tabular format.
         """
-        # Create DataFrame from results
-        results_df = pd.DataFrame.from_dict(results, orient='index')
+        # Filter out unwanted keys and rename model names
+        filtered_results = {}
+        for model_name, model_data in results.items():
+            readable_name = self.model_names_dict.get(model_name, model_name)
+            filtered_results[readable_name] = {k: v for k, v in model_data.items() if k not in ['y_test', 'predictions', 'y_scores', 'task_type']}
+
+        # Create DataFrame from filtered results
+        results_df = pd.DataFrame.from_dict(filtered_results, orient='index')
         results_df.reset_index(inplace=True)
         results_df.rename(columns={'index': 'Model Name'}, inplace=True)
 
-        # Plotting
-        fig, ax = plt.subplots(figsize=(12, len(results_df) * 0.4))  # Adjust size as needed
+        # Format numbers for better display
+        results_df = results_df.map(lambda x: f'{x:.4f}' if isinstance(x, (float, int)) else x)
+
+        # Plotting and styling
+        fig, ax = plt.subplots(figsize=(12, len(results_df) * 0.4))
         ax.axis('tight')
         ax.axis('off')
-        table = ax.table(cellText=results_df.values, colLabels=results_df.columns, cellLoc='center', loc='center')
+        table = ax.table(cellText=results_df.values, colLabels=results_df.columns, loc='center', cellLoc='center')
         table.auto_set_font_size(False)
-        table.set_fontsize(10)  # Adjust font size as needed
-        table.scale(1.2, 1.2)  # Adjust scale as needed
+        table.set_fontsize(8)
+        table.scale(1.2, 1.5)
 
-        # Apply seaborn style
         sns.set_style("whitegrid")
-        plt.title('Model Evaluation Results')
+        plt.title('Model Evaluation Results', pad=20)
 
         plt.savefig(os.path.join(self.save_path, "results_table.png"), bbox_inches='tight', pad_inches=0.05)
         plt.close()
@@ -119,14 +174,74 @@ class ModelVisualizer:
             results (dict): Dictionary containing evaluation results for each model.
             class_names (list of str, optional): Class names for classification labels.
         """
-        for model_name, model_results in results.items():
+        num_models = len(results)
+        # Calculate grid size for subplots
+        grid_size = int(np.ceil(np.sqrt(num_models)))
+        fig, axes = plt.subplots(grid_size, grid_size, figsize=(grid_size * 6, grid_size * 6))
+        fig.suptitle('Confusion Matrices for All Models', fontsize=16)
+
+        # Flatten axes array for easy indexing
+        axes = axes.flatten()
+
+        for idx, (model_name, model_results) in enumerate(results.items()):
+            model_name = self.model_names_dict[model_name]
             y_test = model_results['y_test']
             predictions = model_results['predictions']
-            fig, ax = plt.subplots(figsize=(8, 6))
-            self._plot_confusion_matrix(y_test, predictions, ax, class_names=class_names, title=f'Confusion Matrix for {model_name}')
-            plt.tight_layout()
-            plt.savefig(os.path.join(self.save_path, f"{model_name}_confusion_matrix.png"))
-            plt.close()
+            ax = axes[idx]
+
+            # Call the plotting function for each model
+            self._plot_confusion_matrix(y_test, predictions, ax, class_names, 
+                                        title=f'Confusion Matrix for {model_name}')
+
+        # Hide unused subplots
+        for idx in range(num_models, len(axes)):
+            fig.delaxes(axes[idx])
+
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.9)  # Adjust the top padding
+        plt.savefig(os.path.join(self.save_path, "all_confusion_matrices.png"))
+        plt.close()
+    
+    def _create_standard_plots(self, plot_name, results, model_colors):
+        fig, ax = plt.subplots(figsize=(8, 6))
+        plot_function = self.plot_functions[plot_name]
+
+        for model_name, model_results in results.items():
+            color = model_colors[model_name]
+            model_name = self.model_names_dict[model_name]
+            y_test = model_results['y_test']
+            y_scores = model_results.get('y_scores', None)
+
+            if y_scores is not None:
+                plot_function(y_test, y_scores, ax, label=model_name, color=color)
+
+        ax.legend()
+        plt.tight_layout()
+        plt.savefig(os.path.join(self.save_path, f"{plot_name}.png"))
+        plt.close()
+
+    def _create_individual_plots(self, plot_name, results):
+        num_models = len(results)
+        grid_size = int(np.ceil(np.sqrt(num_models)))
+        fig, axes = plt.subplots(grid_size, grid_size, figsize=(grid_size * 6, grid_size * 6))
+        fig.suptitle(f'{plot_name.replace("_", " ").title()} for All Models', fontsize=16)
+        axes = axes.flatten()
+
+        for idx, (model_name, model_results) in enumerate(results.items()):
+            model_name = self.model_names_dict[model_name]
+            ax = axes[idx]
+            y_test = model_results['y_test']
+            predictions = model_results['predictions']
+            self.plot_functions[plot_name](y_test, predictions, ax)
+            ax.set_title(f'{model_name}')
+
+        for idx in range(num_models, len(axes)):
+            fig.delaxes(axes[idx])
+
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.9)
+        plt.savefig(os.path.join(self.save_path, f"{plot_name}_all_models.png"))
+        plt.close()
 
     def create_visualizations(self, results):
         """
@@ -136,30 +251,45 @@ class ModelVisualizer:
             results (dict): Dictionary containing evaluation results for each model.
         """
         try:
-            task_type = next(iter(results.values()))['task_type']  
-            
+            task_type = next(iter(results.values()))['task_type']
+            model_colors = self._assign_colors_to_models(results)
+
             for plot_name in self.plot_types[task_type]:
-                fig, ax = plt.subplots(figsize=(8, 6))
-                plot_function = self.plot_functions[plot_name]
+                if plot_name in ['roc_curve', 'precision_recall_curve']:
+                    self._create_standard_plots(plot_name, results, model_colors)
+                elif plot_name in ['residuals', 'prediction_vs_actual']:
+                    self._create_individual_plots(plot_name, results)
 
-                for model_name, model_results in results.items():
-                    y_test = model_results['y_test']
-                    predictions = model_results['predictions']
-                    y_scores = model_results.get('y_scores', None)
-
-                    if plot_name in ['roc_curve', 'precision_recall_curve'] and y_scores is not None:
-                        plot_function(y_test, y_scores, ax, label=model_name)
-                    elif plot_name in ['residuals', 'prediction_vs_actual']:
-                        plot_function(y_test, predictions, ax, label=model_name)
-
-                ax.legend()
-                plt.tight_layout()
-                plt.savefig(os.path.join(self.save_path, f"{plot_name}.png"))
-                plt.close()
-            
             self._generate_results_table(results)
             if task_type == 'classification':
                 self._create_confusion_matrices(results)
         
         except Exception as e:
             print(f"Error in creating visualizations: {e}")
+    
+    def create_pdf_report(self, results):
+        pdf = PDFReport()
+        pdf.add_page()
+
+        # Add the results table
+        pdf.chapter_title('Evaluation Results')
+        results_table_path = os.path.join(self.save_path, "results_table.png")
+        if os.path.exists(results_table_path):
+            pdf.chapter_image(results_table_path)
+
+        # Add each plot
+        for plot_name in self.plot_types[next(iter(results.values()))['task_type']]:
+            plot_path = os.path.join(self.save_path, f"{plot_name}.png")
+            if os.path.exists(plot_path):
+                pdf.chapter_title(plot_name.replace('_', ' ').title())
+                pdf.chapter_image(plot_path, scale=0.6)
+
+            # For individual plots (e.g., residuals, prediction_vs_actual)
+            individual_plot_path = os.path.join(self.save_path, f"{plot_name}_all_models.png")
+            if os.path.exists(individual_plot_path):
+                pdf.chapter_title(plot_name.replace('_', ' ').title())
+                pdf.chapter_image(individual_plot_path)
+
+        # Save the PDF
+        pdf_output_path = os.path.join(self.save_path, "model_evaluation_report.pdf")
+        pdf.output(pdf_output_path)

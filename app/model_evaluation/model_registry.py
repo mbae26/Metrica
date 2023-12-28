@@ -1,7 +1,6 @@
 import logging
 
 from sklearn.linear_model import LogisticRegression, LinearRegression, Lasso
-from sklearn.naive_bayes import MultinomialNB
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, RandomForestRegressor, GradientBoostingRegressor
 from keras.models import Sequential
@@ -24,6 +23,7 @@ class ShallowNeuralNetwork:
         try:
             model = Sequential()
             model.add(Dense(10, activation='relu', input_shape=input_shape))
+            model.add(Dense(10, activation='relu'))
             model.add(Dense(1, activation='sigmoid'))
             model.compile(optimizer=kwargs.get('optimizer', 'adam'),
                         loss=kwargs.get('loss', 'binary_crossentropy'),
@@ -47,6 +47,7 @@ class ShallowNeuralNetwork:
         try:
             model = Sequential()
             model.add(Dense(10, activation='relu', input_shape=input_shape))
+            model.add(Dense(10, activation='relu'))
             model.add(Dense(1, activation='linear'))  # Output layer for regression
             model.compile(optimizer=kwargs.get('optimizer', 'adam'),
                         loss=kwargs.get('loss', 'mean_squared_error'),
@@ -59,7 +60,6 @@ class ShallowNeuralNetwork:
 
 CLASSIFICATION_MODELS = {
     'LogisticRegression': LogisticRegression,
-    'NaiveBayes': MultinomialNB,
     'DecisionTree_Classification': DecisionTreeClassifier,
     'RandomForest_Classification': RandomForestClassifier,
     'AdaBoost': AdaBoostClassifier,

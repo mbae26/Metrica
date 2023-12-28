@@ -96,7 +96,7 @@ class RequestProcessor:
             evaluation_scores['predictions'] = (evaluation_scores['y_scores'] > 0.5).astype(int)
 
         metrics_scores = evaluator.calculate_metrics(self.request.task_type,
-                                                     y_test, evaluation_scores['predictions'])
+                                                    y_test, evaluation_scores['predictions'])
         evaluation_scores.update(metrics_scores)
 
         return evaluation_scores

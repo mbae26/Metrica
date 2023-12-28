@@ -25,7 +25,7 @@ class MetricsEvaluator:
                                                                     y_pred, average='weighted',
                                                                     zero_division=0),
                 'recall': lambda y_true, y_pred: recall_score(y_true, y_pred,
-                                                              average='weighted', zero_division=0),
+                                                            average='weighted', zero_division=0),
                 'f1_score': lambda y_true, y_pred: f1_score(y_true, y_pred,
                                                             average='weighted', zero_division=0),
             },

@@ -70,7 +70,7 @@ class TestDatabase(unittest.TestCase):
     def test_add_result(self, mock_session_class):
         mock_session = mock_session_class.return_value
         
-        database.add_result('test_user', 'test_summary', 'classification', 'test_metrics')
+        database.add_result('test_user', 'classification', 'test_metrics')
         # Assert the session's add and commit methods were called
         mock_session.add.assert_called_once()
         mock_session.commit.assert_called_once()

@@ -143,18 +143,6 @@ class RequestProcessor:
                 'GradientBoosting_Regression': {},
                 # 'ShallowNN_Regression': {'input_shape': (X_train.shape[1],)},
             }
-        # # Load hyperparameters and model type from the specified JSON file
-        # try:
-        #     with open(self.request.hyperparams_path, 'r') as hp_file:
-        #         model_config = json.load(hp_file)
-        # except FileNotFoundError:
-        #     print(f"Hyperparameters file not found: {self.request.hyperparams_path}")
-        #     return
-        # except json.JSONDecodeError:
-        #     print(f"Error decoding JSON from file: {self.request.hyperparams_path}")
-        #     return
-
-        # hyperparams = model_config.get('hyperparameters', {})
 
         model_registry_dict = {}
         if task_type == 'classification':

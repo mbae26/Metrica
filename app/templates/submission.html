@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Submission</title>
+    <!-- Bootstrap CSS CDN -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Your Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container mt-5">
+        <header class="text-center mb-4">
+            <h1>Model Submission</h1>
+        </header>
+        <div class="card p-4">
+            <h2 class="text-center mb-3">Upload Your Model</h2>
+            <form id="uploadForm" method="POST" action="/upload" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="task_type">Task Type:</label>
+                    <select class="form-control" id="task_type" name="task_type" required>
+                        <option value="Classification">Classification</option>
+                        <option value="Regression">Regression</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="train_set">Train Set:</label>
+                    <input type="file" class="form-control-file" id="train_set" name="train_set" accept=".csv" required>
+                </div>
+                <div class="form-group">
+                    <label for="test_set">Test Set:</label>
+                    <input type="file" class="form-control-file" id="test_set" name="test_set" accept=".csv" required>
+                </div>
+                <div class="form-group">
+                    <label for="model">Trained Model:</label>
+                    <input type="file" class="form-control-file" id="model" name="model" accept=".joblib" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Submit</button>
+            </form>
+        </div>
+        <div id="message"></div>
+    </div>
+    <!-- Your Custom JS -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <!-- Bootstrap JS, Popper.js, and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.7.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

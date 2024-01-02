@@ -41,7 +41,7 @@ def main():
 
                 visualizer = ModelVisualizer(save_path)
                 visualizer.create_visualizations(results)
-                visualizer.create_pdf_report(results)
+                visualizer.create_latex_report(results)
 
                 # database.add_result(request.user_id, request.task_type, results)
                 # utils.send_email(save_path, request.email)

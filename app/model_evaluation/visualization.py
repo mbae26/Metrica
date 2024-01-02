@@ -3,22 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from fpdf import FPDF
+import subprocess
 from sklearn.metrics import roc_curve, auc, precision_recall_curve, confusion_matrix
-
-class PDFReport(FPDF):
-    def header(self):
-        self.set_font('Arial', 'B', 12)
-        self.cell(0, 10, 'Model Evaluation Report', 0, 1, 'C')
-
-    def chapter_title(self, title):
-        self.set_font('Arial', 'B', 12)
-        self.cell(0, 10, title, 0, 1, 'L')
-        self.ln(5)
-
-    def chapter_image(self, image_path, scale=1.0):
-        self.image(image_path, x = 10, w = 180 * scale)
-        self.ln(10)
 
 class ModelVisualizer:
     """
@@ -267,29 +253,40 @@ class ModelVisualizer:
         except Exception as e:
             print(f"Error in creating visualizations: {e}")
     
-    def create_pdf_report(self, results):
-        pdf = PDFReport()
-        pdf.add_page()
+    def create_latex_report(self, results):
+        """
+        Generates a LaTeX report from a template with visualizations and compiles it into a PDF.
 
-        # Add the results table
-        pdf.chapter_title('Evaluation Results')
-        results_table_path = os.path.join(self.save_path, "results_table.png")
-        if os.path.exists(results_table_path):
-            pdf.chapter_image(results_table_path)
+        Args:
+            results (dict): Dictionary containing evaluation results for each model.
 
-        # Add each plot
-        for plot_name in self.plot_types[next(iter(results.values()))['task_type']]:
-            plot_path = os.path.join(self.save_path, f"{plot_name}.png")
-            if os.path.exists(plot_path):
-                pdf.chapter_title(plot_name.replace('_', ' ').title())
-                pdf.chapter_image(plot_path, scale=0.6)
+        Returns:
+            str: Path to the compiled PDF report.
+        """
+        task_type = next(iter(results.values()))['task_type']
+        if task_type != 'classification':
+            return
+        current_folder = os.path.dirname(os.path.realpath(__file__))
+        template_path = os.path.join(current_folder, "report_templates", f"{task_type}_report_template.tex")
 
-            # For individual plots (e.g., residuals, prediction_vs_actual)
-            individual_plot_path = os.path.join(self.save_path, f"{plot_name}_all_models.png")
-            if os.path.exists(individual_plot_path):
-                pdf.chapter_title(plot_name.replace('_', ' ').title())
-                pdf.chapter_image(individual_plot_path)
+        latex_output_path = os.path.join(self.save_path, "model_evaluation_report.tex")
 
-        # Save the PDF
-        pdf_output_path = os.path.join(self.save_path, "model_evaluation_report.pdf")
-        pdf.output(pdf_output_path)
+        images_dict = {
+            'logo_placeholder': os.path.join(current_folder, "report_templates", "logo-no-background.png"),
+            'results_table_placeholder': os.path.join(self.save_path, "results_table.png"),
+            'roc_curve_placeholder': os.path.join(self.save_path, "roc_curve.png"),
+            'precision_recall_curve_placeholder': os.path.join(self.save_path, "precision_recall_curve.png"),
+            'confusion_matrices_placeholder': os.path.join(self.save_path, "all_confusion_matrices.png"),
+            # ... other images ...
+        }
+
+        with open(template_path, 'r', encoding='utf-8') as file:
+            template_content = file.read()
+
+        for placeholder, image_path in images_dict.items():
+            template_content = template_content.replace(f'{{{placeholder}}}', image_path)
+
+        with open(latex_output_path, 'w', encoding='utf-8') as file:
+            file.write(template_content)
+
+        subprocess.run(['pdflatex', '-output-directory', self.save_path, latex_output_path])

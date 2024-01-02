@@ -44,7 +44,7 @@ def main():
                 visualizer.create_latex_report(results)
 
                 # database.add_result(request.user_id, request.task_type, results)
-                # utils.send_email(save_path, request.email)
+                utils.send_email(save_path, request.email)
                 # database.update_request_status(request.user_id, 'COMPLETED')
 
             except Exception as e:

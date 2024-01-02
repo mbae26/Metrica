@@ -2,6 +2,7 @@ import os
 import hashlib
 from datetime import datetime
 import logging
+from dotenv import load_dotenv
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -11,8 +12,11 @@ from flask import current_app as app
 from config import S3_CLIENT, REQUEST_BUCKET_NAME, S3Client
 from app.data_management import database
 
+load_dotenv()
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 def ensure_directory_exists(path):
     """
@@ -32,8 +36,8 @@ def send_email(file_directory_path, receiver_email):
     If any of the files do not exist, the function raises an exception.
     """
     try:
-        sender_email = app.config['SENDER_EMAIL']
-        password = app.config['SENDER_EMAIL_PASSWORD']
+        sender_email = os.getenv('SENDER_EMAIL')
+        password = os.getenv('SENDER_EMAIL_PASSWORD')
 
         subject = "Model Processing Results"
         email_body = "Your model processing is completed. Please find the results attached."
@@ -46,7 +50,7 @@ def send_email(file_directory_path, receiver_email):
 
         # List of files to be attached
         file_names = [
-            "all_confusion_matrix.png",
+            "all_confusion_matrices.png",
             "precision_recall_curve.png",
             "results_table.png",
             "roc_curve.png",

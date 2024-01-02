@@ -4,3 +4,7 @@ __pycache__/
 instance
 data
 metrica-v1.zip
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml

@@ -36,8 +36,10 @@ def send_email(file_directory_path, receiver_email):
     If any of the files do not exist, the function raises an exception.
     """
     try:
-        sender_email = os.getenv('SENDER_EMAIL')
-        password = os.getenv('SENDER_EMAIL_PASSWORD')
+        # sender_email = os.getenv('SENDER_EMAIL')
+        sender_email = os.environ('SENDER_EMAIL')
+        # password = os.getenv('SENDER_EMAIL_PASSWORD')
+        password = os.environ('SENDER_EMAIL_PASSWORD')
 
         subject = "Model Processing Results"
         email_body = "Your model processing is completed. Please find the results attached."

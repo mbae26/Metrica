@@ -17,11 +17,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 def main():
     # Initialize S3 client
-    s3_bucket_name = os.getenv('REQUEST_BUCKET_NAME')
+    # s3_bucket_name = os.getenv('REQUEST_BUCKET_NAME')
+    s3_bucket_name = os.environ('REQUEST_BUCKET_NAME')
     s3_client_boto = boto3.client(
         's3',
-        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+        aws_access_key_id=os.environ('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.environ('AWS_SECRET_ACCESS_KEY')
     )
     s3_client = S3Client(s3_client_boto, s3_bucket_name)
 

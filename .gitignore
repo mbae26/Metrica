@@ -9,3 +9,5 @@ metrica-v1.zip
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
 .venv
+
+environment.yml

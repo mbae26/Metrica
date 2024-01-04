@@ -30,7 +30,7 @@ class Request(BaseRequests):
                 task_type='{self.task_type}')>"
 
 engine_requests = create_engine(f"sqlite:///{instance_dir}/requests.db")
-BaseRequests.metadata.create_all(engine_requests)
+BaseRequests.metadata.create_all(engine_requests, checkfirst=True)
 SessionRequests = sessionmaker(bind=engine_requests)
 
 
@@ -46,7 +46,7 @@ class Result(BaseResults):
 
 
 engine_results = create_engine(f"sqlite:///{instance_dir}/results.db")
-BaseResults.metadata.create_all(engine_results)
+BaseResults.metadata.create_all(engine_results, checkfirst=True)
 SessionResults = sessionmaker(bind=engine_results)
 
 

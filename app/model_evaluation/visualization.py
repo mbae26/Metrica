@@ -264,8 +264,6 @@ class ModelVisualizer:
             str: Path to the compiled PDF report.
         """
         task_type = next(iter(results.values()))['task_type']
-        if task_type != 'classification':
-            return
         current_folder = os.path.dirname(os.path.realpath(__file__))
         template_path = os.path.join(current_folder, "report_templates", f"{task_type}_report_template.tex")
 
@@ -277,7 +275,8 @@ class ModelVisualizer:
             'roc_curve_placeholder': os.path.join(self.save_path, "roc_curve.png"),
             'precision_recall_curve_placeholder': os.path.join(self.save_path, "precision_recall_curve.png"),
             'confusion_matrices_placeholder': os.path.join(self.save_path, "all_confusion_matrices.png"),
-            # ... other images ...
+            'prediction_vs_actual_placeholder': os.path.join(self.save_path, "prediction_vs_actual_all_models.png"),
+            'residuals_placeholder': os.path.join(self.save_path, "residuals_all_models.png"),
         }
 
         with open(template_path, 'r', encoding='utf-8') as file:

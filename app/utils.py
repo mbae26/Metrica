@@ -30,7 +30,7 @@ def ensure_directory_exists(path):
         raise
 
 
-def send_email(file_directory_path, receiver_email):
+def send_email(file_directory_path, receiver_email, task_type):
     """
     Sends an email with the results and attachments.
     If any of the files do not exist, the function raises an exception.
@@ -49,16 +49,24 @@ def send_email(file_directory_path, receiver_email):
         message.attach(MIMEText(email_body, 'plain'))
 
         # List of files to be attached
-        file_names = [
-            "all_confusion_matrices.png",
-            "precision_recall_curve.png",
-            "results_table.png",
-            "roc_curve.png",
-            "model_evaluation_report.pdf"
-        ]
+        file_names = {
+            'classification': [
+                "all_confusion_matrices.png",
+                "precision_recall_curve.png",
+                "results_table.png",
+                "roc_curve.png",
+                "model_evaluation_report.pdf",
+            ],
+            'regression': [
+                "results_table.png",
+                "prediction_vs_actual_all_models.png",
+                "residuals_all_models.png",
+                "model_evaluation_report.pdf",
+            ]
+        }
 
         # Attach each file
-        for file_name in file_names:
+        for file_name in file_names[task_type]:
             file_path = os.path.join(file_directory_path, file_name)
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f"File {file_path} not found. Email sending aborted.")
